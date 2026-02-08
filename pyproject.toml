@@ -1,0 +1,61 @@
+[project]
+name = "xbt"
+version = "0.1.0"
+description = "xbt is a wrapper around dbt that uses dbtRunner and a simple plugin system to add custom logic before and after dbt commands."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "dbt-core>=1.11.0",
+    "pluggy>=1.6.0",
+]
+
+[project.scripts]
+xbt = "xbt.main:main"
+
+[project.entry-points.xbt]
+# External plugins register here
+
+[dependency-groups]
+dev = [
+    "ruff>=0.4.0",
+    "ty>=0.0.15",
+    "pytest>=8.0.0",
+    "pytest-mock>=3.10.0",
+    "pyyaml>=6.0",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+exclude = [
+    ".venv",
+    "__pycache__",
+    ".git",
+    "build",
+    "dist",
+    ".eggs",
+]
+
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "B", "I"]
+ignore = [
+    "E501",  # Line too long (handled by formatter)
+]
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["xbt"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/xbt"]

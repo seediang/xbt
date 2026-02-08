@@ -1,0 +1,2 @@
+# Invalid YAML configuration file for testing error handling
+invalid: yaml: content: [

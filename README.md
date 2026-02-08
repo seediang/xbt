@@ -1,6 +1,6 @@
 # xbt – dbt Extended
 
-**xbt** is a powerful wrapper around [dbt](https://docs.getdbt.com/) that extends `dbtRunner` with a simple yet flexible plugin system. It enables you to inject custom logic before and after dbt commands while maintaining full compatibility with dbt's CLI and exit codes.
+**xbt** is a wrapper around [dbt](https://docs.getdbt.com/) that extends `dbtRunner` with a simple yet flexible plugin system. It enables you to inject custom logic before and after dbt commands while maintaining full compatibility with dbt's CLI and exit codes.
 
 ## Features
 
@@ -218,4 +218,3 @@ dbt® is a registered trademark of dbt Labs, Inc. This project is an independent
 ## Contributing
 
 [Add contribution guidelines here]
-# xbt

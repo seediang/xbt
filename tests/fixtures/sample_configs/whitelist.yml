@@ -1,0 +1,4 @@
+# Sample xbt.yml configuration with enabled plugins (whitelist mode)
+enabled_plugins:
+  - builtin_plugin_command
+  - external_test_plugin

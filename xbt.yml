@@ -1,0 +1,26 @@
+# XBT Plugin Configuration
+#
+# This file controls which plugins are loaded when xbt starts.
+# Two modes are supported:
+#
+# 1. Whitelist mode (enabled_plugins specified):
+#    Only listed plugins will be loaded. Anything not in the list is disabled.
+#
+# 2. Blacklist mode (only disabled_plugins specified):
+#    All plugins are loaded except those in the disabled_plugins list.
+#    This is the default if enabled_plugins is not specified.
+
+# List of plugins to enable (whitelist mode)
+# If this key is present, ONLY these plugins will be loaded.
+# If it's present but empty, NO plugins will be loaded.
+# Uncomment and customize to use whitelist mode:
+#
+# enabled_plugins:
+#   - builtin_example_plugin
+#   - builtin_plugin_manager_plugin
+#   - my_external_plugin
+
+# List of plugins to disable (blacklist mode)
+# Only used if enabled_plugins is not specified.
+# Use this to disable specific plugins while keeping others enabled.
+disabled_plugins: []
