@@ -1,0 +1,9 @@
+test:
+  outputs:
+    dev:
+      type: duckdb
+      path: "[dbt_db_path]"
+      threads: 1
+      timeout_seconds: 300
+
+  target: dev

@@ -148,3 +148,44 @@ def _setup_xbt_runner_mocks(mocker, request):
         mocker.patch("pathlib.Path.glob", return_value=[])
         mocker.patch("importlib.metadata.entry_points", return_value=[])
         mocker.patch("dbt.cli.main.dbtRunner.__init__", return_value=None)
+
+
+@pytest.fixture
+def dbt_project_dir():
+    """Return the path to the fixture dbt project."""
+    fixture_path = Path(__file__).parent / "fixtures" / "dbt_project"
+    return fixture_path
+
+
+@pytest.fixture
+def dbt_temp_dir(tmp_path, dbt_project_dir):
+    """Set up temporary directory for dbt and create profiles.yml with correct path."""
+    import os
+
+    # Create a temporary dbt home directory
+    dbt_home = tmp_path / "dbt_home"
+    dbt_home.mkdir(parents=True, exist_ok=True)
+
+    # Path for DuckDB database
+    db_path = tmp_path / "test.duckdb"
+
+    # Read profiles template and replace placeholder
+    profiles_template = dbt_project_dir / "profiles.yml"
+    profiles_content = profiles_template.read_text()
+    profiles_content = profiles_content.replace(
+        "[dbt_db_path]", str(db_path).replace("\\", "/")
+    )
+
+    # Write to temp dbt home
+    profiles_dir = dbt_home / "dbt" / "profiles.yml"
+    profiles_dir.parent.mkdir(parents=True, exist_ok=True)
+    profiles_dir.write_text(profiles_content)
+
+    # Set environment variable to use temp profiles
+    os.environ["DBT_PROFILES_DIR"] = str(dbt_home / "dbt")
+
+    yield dbt_home, db_path, dbt_project_dir
+
+    # Cleanup
+    if "DBT_PROFILES_DIR" in os.environ:
+        del os.environ["DBT_PROFILES_DIR"]
