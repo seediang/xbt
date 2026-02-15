@@ -81,9 +81,9 @@ class TestDbtDuckdbIntegration:
                 timeout=60,
             )
 
-            assert (
-                result.returncode == 0
-            ), f"xbt parse failed with return code {result.returncode}:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+            assert result.returncode == 0, (
+                f"xbt parse failed with return code {result.returncode}:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+            )
             assert (project_dir / "target" / "manifest.json").exists()
 
         finally:
@@ -112,9 +112,9 @@ class TestDbtDuckdbIntegration:
                 text=True,
                 timeout=60,
             )
-            assert (
-                result.returncode == 0
-            ), f"xbt seed failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+            assert result.returncode == 0, (
+                f"xbt seed failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+            )
 
             # Then run
             result = subprocess.run(
@@ -123,9 +123,9 @@ class TestDbtDuckdbIntegration:
                 text=True,
                 timeout=60,
             )
-            assert (
-                result.returncode == 0
-            ), f"xbt run failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+            assert result.returncode == 0, (
+                f"xbt run failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+            )
 
         finally:
             os.chdir(original_cwd)
@@ -155,9 +155,9 @@ class TestDbtDuckdbIntegration:
                 text=True,
                 timeout=60,
             )
-            assert (
-                result.returncode == 0
-            ), f"xbt test failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+            assert result.returncode == 0, (
+                f"xbt test failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+            )
 
         finally:
             os.chdir(original_cwd)
