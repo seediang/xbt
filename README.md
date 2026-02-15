@@ -1,4 +1,4 @@
-# xbt – dbt Extended
+# xbt-core – dbt-core Extended
 
 **xbt** is a wrapper around [dbt](https://docs.getdbt.com/) that extends `dbtRunner` with a simple yet flexible plugin system. It enables you to inject custom logic before and after dbt commands while maintaining full compatibility with dbt's CLI and exit codes.
 
@@ -24,7 +24,7 @@ uv sync
 
 ## Quick Start
 
-Use `xbt` as a drop-in replacement for `dbt`:
+Use `xbt` as a drop-in replacement for `dbt-core`:
 
 ```bash
 xbt run
