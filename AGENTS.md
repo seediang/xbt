@@ -21,4 +21,5 @@ xbt has a plugin systems that exposes the following:
 
 # command line
 - use the following to run python ```uv run python```
-- You have access to a powershell console
+- You have access to a powershell console when on windows
+- when running on linux a powershell console can be started with the pwsh command

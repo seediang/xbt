@@ -42,6 +42,10 @@ class XbtPluginManager:
         self.pm.add_hookspecs(hookspecs)
         self._plugins_loaded = []
         self._plugin_registry: List[Dict[str, Any]] = []
+        # Raw discovered plugins (including metadata) in discovery order
+        self._discovered_plugins_raw: List[Dict[str, Any]] = []
+        # Optional explicit ordering from config
+        self._plugin_order: Optional[List[str]] = None
         self._enabled_plugins: Optional[Set[str]] = None
         self._disabled_plugins: Set[str] = set()
 
@@ -74,6 +78,13 @@ class XbtPluginManager:
             if enabled is not None:
                 self._enabled_plugins = set(enabled) if enabled else set()
                 logger.info(f"Enabled plugins from config: {self._enabled_plugins}")
+
+            # Parse plugin_order
+            plugin_order = config.get("plugin_order")
+            if plugin_order is not None:
+                # keep the order as provided by the user
+                self._plugin_order = list(plugin_order) if plugin_order else []
+                logger.info(f"Plugin order from config: {self._plugin_order}")
 
             # Parse disabled_plugins
             disabled = config.get("disabled_plugins") or []
@@ -125,10 +136,14 @@ class XbtPluginManager:
     def _discover_and_load_plugins(self):
         """Discover and load plugins from all sources."""
         # Load built-in plugins from src/xbt/_plugins/
+        # Discover built-in and external plugins; registration happens
+        # after ordering is computed to allow `plugin_order` to take effect.
         self._load_builtin_plugins()
-
-        # Load external plugins from entry points
         self._load_entry_point_plugins()
+
+        # Register discovered plugins in the final order determined by
+        # configuration (if provided) while respecting disabled/whitelist.
+        self._register_plugins_in_order()
 
     def _load_builtin_plugins(self):
         """Load built-in plugins from the _plugins package."""
@@ -165,22 +180,19 @@ class XbtPluginManager:
                             logger.debug(f"Skipping disabled plugin: {plugin_name}")
                             continue
 
-                        # Register the module with pluggy
-                        self.pm.register(module, name=plugin_name)
-                        self._plugins_loaded.append(plugin_name)
-
-                        # Track plugin metadata
+                        # Record discovery; actual registration delayed until
+                        # ordering is computed.
                         version = getattr(module, "__version__", "unknown")
-                        self._plugin_registry.append(
+                        self._discovered_plugins_raw.append(
                             {
                                 "name": plugin_name,
+                                "obj": module,
                                 "version": version,
                                 "source": "builtin",
                                 "module": f"xbt._plugins.{module_name}",
                             }
                         )
-
-                        logger.debug(f"Loaded built-in plugin: {module_name}")
+                        logger.debug(f"Discovered built-in plugin: {module_name}")
                 except Exception as e:
                     logger.warning(f"Failed to load built-in plugin {module_name}: {e}")
         except Exception as e:
@@ -207,35 +219,86 @@ class XbtPluginManager:
                     continue
 
                 plugin = entry_point.load()
-                self.pm.register(plugin, name=entry_point.name)
-                self._plugins_loaded.append(entry_point.name)
-
-                # Track plugin metadata with version info
+                # Attempt to determine version from distribution metadata
                 version = "unknown"
                 try:
-                    # Extract package name from entry point value
-                    # Format is typically "package.module:function"
                     package_name = entry_point.value.split(":")[0].split(".")[0]
                     dist = importlib.metadata.distribution(package_name)
                     version = dist.version
                 except Exception:
-                    pass  # Keep version as "unknown"
+                    pass
 
-                self._plugin_registry.append(
+                # Record discovery; registration delayed until ordering step
+                self._discovered_plugins_raw.append(
                     {
                         "name": entry_point.name,
+                        "obj": plugin,
                         "version": version,
                         "source": "external",
                         "module": entry_point.value,
                     }
                 )
-
-                logger.debug(f"Loaded entry point plugin: {entry_point.name}")
+                logger.debug(f"Discovered entry point plugin: {entry_point.name}")
             except Exception as e:
                 logger.warning(
                     f"Failed to load entry point plugin {entry_point.name}: {e}"
                 )
 
+        # Note: _register_plugins_in_order will apply config-based filtering
+        # (enabled/disabled) when doing the final registrations.
+
+    def _register_plugins_in_order(self):
+        """Register discovered plugins with pluggy in configured order.
+
+        This respects `self._plugin_order` when provided. Any names in
+        `plugin_order` that are not present (either unknown or disabled)
+        will be logged and ignored. Remaining discovered plugins are
+        appended in discovery order.
+        """
+        # Build a map for quick lookup
+        discovered_map = {p["name"]: p for p in self._discovered_plugins_raw}
+
+        # Determine allowed candidates (respecting enabled/disabled)
+        candidates = [p for p in self._discovered_plugins_raw if self._is_plugin_allowed(p["name"])]
+        candidate_names = [p["name"] for p in candidates]
+
+        final_order: List[str] = []
+        used: Set[str] = set()
+
+        if self._plugin_order is not None:
+            # Add in user-specified order when available
+            for name in self._plugin_order:
+                if name in candidate_names:
+                    final_order.append(name)
+                    used.add(name)
+                else:
+                    logger.warning(f"Plugin specified in plugin_order not found or disabled: {name}")
+
+        # Append remaining candidates in discovery order
+        for name in candidate_names:
+            if name not in used:
+                final_order.append(name)
+
+        # Perform actual registration in final_order
+        for name in final_order:
+            entry = discovered_map.get(name)
+            if not entry:
+                logger.debug(f"Skipping unknown plugin during registration: {name}")
+                continue
+            try:
+                self.pm.register(entry["obj"], name=name)
+                self._plugins_loaded.append(name)
+                self._plugin_registry.append(
+                    {
+                        "name": name,
+                        "version": entry.get("version", "unknown"),
+                        "source": entry.get("source", "unknown"),
+                        "module": entry.get("module", "unknown"),
+                    }
+                )
+                logger.debug(f"Registered plugin: {name}")
+            except Exception as e:
+                logger.warning(f"Failed to register plugin {name}: {e}")
     def hook_register_commands(self, cli_group: Any) -> None:
         """
         Call xbt_register_commands hook for all plugins.

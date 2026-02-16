@@ -587,3 +587,81 @@ class TestPluginRegistry:
         assert plugins[0]["version"] == "1.2.3"
         assert plugins[0]["source"] == "external"
         assert plugins[0]["module"] == "test_package.plugin:hooks"
+
+
+class TestPluginOrdering:
+    """Tests for explicit plugin ordering via xbt.yml"""
+
+    def test_plugin_order_applied_and_remaining_appended(
+        self, reset_plugin_manager, tmp_path, mocker
+    ):
+        """Ensure plugin_order controls registration order and others append."""
+        # Create config with explicit order: plugin_b then plugin_a
+        config_file = tmp_path / "xbt.yml"
+        config_file.write_text("plugin_order:\n  - plugin_b\n  - plugin_a\n")
+
+        # Prepare three entry points discovered in order a, b, c
+        mock_ep_a = Mock()
+        mock_ep_a.name = "plugin_a"
+        mock_ep_a.value = "pkg.a:hooks"
+        mock_ep_a.group = "xbt"
+        mock_ep_a.load.return_value = Mock()
+
+        mock_ep_b = Mock()
+        mock_ep_b.name = "plugin_b"
+        mock_ep_b.value = "pkg.b:hooks"
+        mock_ep_b.group = "xbt"
+        mock_ep_b.load.return_value = Mock()
+
+        mock_ep_c = Mock()
+        mock_ep_c.name = "plugin_c"
+        mock_ep_c.value = "pkg.c:hooks"
+        mock_ep_c.group = "xbt"
+        mock_ep_c.load.return_value = Mock()
+
+        mocker.patch("pathlib.Path.cwd", return_value=tmp_path)
+        mocker.patch.object(Path, "glob", return_value=[])  # No built-ins
+        mocker.patch("importlib.metadata.entry_points", return_value=[mock_ep_a, mock_ep_b, mock_ep_c])
+
+        manager = XbtPluginManager()
+
+        # plugin_b and plugin_a are ordered explicitly, plugin_c appended
+        assert manager._plugins_loaded == ["plugin_b", "plugin_a", "plugin_c"]
+
+    def test_plugin_order_warns_on_unknown_or_disabled(
+        self, reset_plugin_manager, tmp_path, mocker, caplog
+    ):
+        """Unknown or disabled names in plugin_order should produce warnings."""
+        # plugin_order references unknown_plugin and external_plugin
+        config_file = tmp_path / "xbt.yml"
+        config_file.write_text(
+            "plugin_order:\n  - unknown_plugin\n  - external_plugin\n  - builtin_x\n"
+        )
+
+        # Simulate discovered entry points includes external_plugin only
+        mock_ep = Mock()
+        mock_ep.name = "external_plugin"
+        mock_ep.value = "pkg.ext:hooks"
+        mock_ep.group = "xbt"
+        mock_ep.load.return_value = Mock()
+
+        mocker.patch("pathlib.Path.cwd", return_value=tmp_path)
+        # Simulate one builtin plugin discovered but disabled via config
+        mock_builtin = Mock()
+        mocker.patch.object(Path, "glob", return_value=[mock_builtin])
+
+        # Provide entry points list
+        mocker.patch("importlib.metadata.entry_points", return_value=[mock_ep])
+
+        # Also set disabled_plugins to include builtin_x so it's skipped
+        # We write the config earlier but need to ensure _load_config picks it up;
+        # the config file already contains plugin_order; append disabled_plugins
+        config_file.write_text(
+            "plugin_order:\n  - unknown_plugin\n  - external_plugin\n  - builtin_x\n\ndisabled_plugins:\n  - builtin_x\n"
+        )
+
+        manager = XbtPluginManager()
+
+        # Expect warnings for unknown_plugin and builtin_x (disabled)
+        warn_msgs = [r.message for r in caplog.records if r.levelname == "WARNING"]
+        assert any("unknown or disabled" in str(m) or "not found or disabled" in str(m) for m in warn_msgs)
