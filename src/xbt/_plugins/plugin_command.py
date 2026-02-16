@@ -38,8 +38,15 @@ def xbt_register_commands(cli_group: Any) -> None:
             print("No plugins loaded")
             return
 
+        # Build a map from name -> metadata for fast lookup
+        plugin_map = {p["name"]: p for p in plugins}
+
         print("Loaded plugins:\n")
-        for plugin in plugins:
+        # Respect the manager's loaded order
+        for name in pm._plugins_loaded:
+            plugin = plugin_map.get(name)
+            if not plugin:
+                continue
             source_icon = "📦" if plugin["source"] == "external" else "🔧"
             print(f"  {source_icon} {plugin['name']}")
             print(f"     Version: {plugin['version']}")

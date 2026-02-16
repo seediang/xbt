@@ -26,6 +26,8 @@ This project is a thin wrapper around dbt that exposes a plugin system. The inst
   - `main()` in [src/xbt/main.py](src/xbt/main.py) maps certain dbt exceptions to specific exit codes; preserve this behavior when changing invocation paths so CLI compatibility remains the same.
 
 - **Developer workflows and commands**:
+this should commands should be executed to check the code is valid
+
   - Run tests: `uv run pytest`
   - Type check: `uv run ty check`
   - Lint / format: `uv run ruff check .` and `uv run ruff format .`
@@ -48,3 +50,4 @@ This project is a thin wrapper around dbt that exposes a plugin system. The inst
   - Pre-invoke arg injection: return a modified list from `xbt_pre_invoke` (see [src/xbt/hookspecs.py](src/xbt/hookspecs.py) docstring example).
 
 If anything here is unclear or you'd like more detail about a specific file or workflow (for example, the entry-point loading behavior or test fixtures), tell me which area to expand and I'll iterate.
+

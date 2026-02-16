@@ -115,6 +115,41 @@ class TestListPluginsCommand:
             assert "1.2.3" in captured.out
             assert "external" in captured.out
 
+    def test_list_plugins_respects_plugin_order(
+        self, reset_plugin_manager, tmp_path, mocker, capsys, mock_cli_with_command_tracking
+    ):
+        """List command should show plugins in configured order."""
+        mock_cli, registered_commands = mock_cli_with_command_tracking
+
+        # Create config with explicit order
+        config_file = tmp_path / "xbt.yml"
+        config_file.write_text("plugin_order:\n  - plugin_b\n  - plugin_a\n")
+
+        # Prepare entry points discovered in order a then b
+        mock_ep_a = Mock()
+        mock_ep_a.name = "plugin_a"
+        mock_ep_a.value = "pkg.a:hooks"
+        mock_ep_a.group = "xbt"
+        mock_ep_a.load.return_value = Mock()
+
+        mock_ep_b = Mock()
+        mock_ep_b.name = "plugin_b"
+        mock_ep_b.value = "pkg.b:hooks"
+        mock_ep_b.group = "xbt"
+        mock_ep_b.load.return_value = Mock()
+
+        mocker.patch("pathlib.Path.cwd", return_value=tmp_path)
+        mocker.patch.object(Path, "glob", return_value=[])  # No built-ins
+        mocker.patch("importlib.metadata.entry_points", return_value=[mock_ep_a, mock_ep_b])
+
+        # Register commands and execute list
+        plugin_command.xbt_register_commands(mock_cli)
+        if "list" in registered_commands:
+            registered_commands["list"]()
+            captured = capsys.readouterr()
+            # plugin_b should appear before plugin_a
+            assert captured.out.index("plugin_b") < captured.out.index("plugin_a")
+
     def test_list_plugins_builtin_icon(self, reset_plugin_manager, mocker, capsys):
         """Test that builtin plugins show correct icon."""
         # Rather than trying to mock the complex plugin loading,

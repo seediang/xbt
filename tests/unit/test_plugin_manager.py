@@ -661,6 +661,7 @@ class TestPluginOrdering:
         )
 
         manager = XbtPluginManager()
+        assert manager is not None
 
         # Expect warnings for unknown_plugin and builtin_x (disabled)
         warn_msgs = [r.message for r in caplog.records if r.levelname == "WARNING"]
