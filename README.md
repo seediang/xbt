@@ -75,6 +75,33 @@ enabled_plugins:
   - my_external_plugin
 ```
 
+#### Explicit Plugin Order
+
+You can control the order in which plugins are called by adding a
+`plugin_order` list to `xbt.yml`. The plugin manager registers and
+invokes hooks in registration order, so specifying `plugin_order`
+ensures `xbt_pre_invoke` chaining and other hooks run in the order you
+expect.
+
+Rules:
+- Plugins listed in `plugin_order` are registered in the given order.
+- Any discovered but unlisted plugins are appended afterwards in
+  discovery order.
+- Plugins listed in `plugin_order` that are disabled or not found are
+  ignored and will emit a warning.
+
+Example `xbt.yml`:
+
+```yaml
+plugin_order:
+  - builtin_example_plugin
+  - my_external_plugin
+
+# You can still use the blacklist/whitelist controls
+disabled_plugins:
+  - builtin_some_other_plugin
+```
+
 #### Plugin Management Commands
 
 Use the built-in `plugin` command to manage and inspect plugins:
@@ -217,4 +244,27 @@ dbt® is a registered trademark of dbt Labs, Inc. This project is an independent
 
 ## Contributing
 
-[Add contribution guidelines here]
+We track changes using Changie (https://changie.dev/) and require a small change fragment for non-trivial PRs.
+
+- Add a changie fragment for code or behavior changes: run `changie new` and include the generated file under `changes/unreleased/`.
+- PRs that only change documentation, tests, fixtures, or Markdown do not need a fragment and are accepted without one.
+- If you have an exceptional reason to skip adding a fragment (for example an emergency hotfix or infra-only change), add the `no-changie` label to the PR and explain the rationale in the PR description; the CI will skip the fragment check when that label is present.
+
+Quick commands:
+
+```bash
+# Create a changie fragment interactively
+changie new
+
+# Batch a patch (maintainer only)
+changie batch patch
+changie merge
+```
+
+Please also run tests and linters before opening a PR:
+
+```bash
+uv run ruff check .
+uv run ty check
+uv run pytest
+```

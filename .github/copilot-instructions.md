@@ -1,3 +1,4 @@
+```instructions
 # Copilot instructions for xbt-core
 
 This project is a thin wrapper around dbt that exposes a plugin system. The instructions below focus on the concrete, discoverable patterns you need to be productive editing and extending this codebase.
@@ -51,3 +52,25 @@ this should commands should be executed to check the code is valid
 
 If anything here is unclear or you'd like more detail about a specific file or workflow (for example, the entry-point loading behavior or test fixtures), tell me which area to expand and I'll iterate.
 
+
+```
+
+## Changelog and release workflow (MANDATORY)
+
+All changes to this repository must be recorded with Changie (https://changie.dev/).
+Before opening a pull request, create a change fragment with `changie new` describing what the change does and why. Include the fragment in your PR so reviewers can validate release notes.
+
+Guidelines:
+- Run `changie new` to create a fragment under `changes/unreleased/` and follow prompts for `kind`/`component`.
+- Use consistent `kind` values (added, changed, fixed, deprecated, removed, security) and appropriate `component` when applicable.
+- When preparing releases, use `changie batch <major|minor|patch>` (or an explicit version) then `changie merge` to update `CHANGELOG.md`.
+- Keep `.changie.yaml` under version control; modify it only when you need to change changie behavior.
+
+Example commands:
+```
+changie new
+changie batch patch
+changie merge
+```
+
+Maintainers will expect changie fragments in PRs; missing fragments may be requested during review.

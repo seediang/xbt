@@ -116,7 +116,12 @@ class TestListPluginsCommand:
             assert "external" in captured.out
 
     def test_list_plugins_respects_plugin_order(
-        self, reset_plugin_manager, tmp_path, mocker, capsys, mock_cli_with_command_tracking
+        self,
+        reset_plugin_manager,
+        tmp_path,
+        mocker,
+        capsys,
+        mock_cli_with_command_tracking,
     ):
         """List command should show plugins in configured order."""
         mock_cli, registered_commands = mock_cli_with_command_tracking
@@ -140,7 +145,9 @@ class TestListPluginsCommand:
 
         mocker.patch("pathlib.Path.cwd", return_value=tmp_path)
         mocker.patch.object(Path, "glob", return_value=[])  # No built-ins
-        mocker.patch("importlib.metadata.entry_points", return_value=[mock_ep_a, mock_ep_b])
+        mocker.patch(
+            "importlib.metadata.entry_points", return_value=[mock_ep_a, mock_ep_b]
+        )
 
         # Register commands and execute list
         plugin_command.xbt_register_commands(mock_cli)

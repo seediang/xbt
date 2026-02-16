@@ -1,0 +1,74 @@
+name: Changie fragment check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  require-changie-fragment:
+    name: Require Changie fragment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine changed files
+        id: changed
+        run: |
+          echo "Base ref: ${{ github.event.pull_request.base.ref }}"
+          echo "Head sha: ${{ github.event.pull_request.head.sha }}"
+          # Ensure base branch ref is available
+          git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1 || true
+          CHANGED=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD || true)
+          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Check for changie fragment
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          # If the PR has the 'no-changie' label, skip the check.
+          LABELS=$(gh pr view $PR_NUMBER --json labels --jq '.labels[].name' 2>/dev/null || true)
+          if echo "$LABELS" | grep -q "no-changie"; then
+            echo "PR is labeled 'no-changie' — skipping changie requirement."
+            exit 0
+          fi
+
+          
+        run: |
+          echo "Changed files:\n${{ steps.changed.outputs.changed_files }}"
+          CHANGED="${{ steps.changed.outputs.changed_files }}"
+
+          # If the PR only contains docs, tests, fixtures, or Markdown files,
+          # skip the changie fragment requirement.
+          only_docs=true
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            case "$file" in
+              docs/*|tests/*|fixtures/*|*.md)
+                ;; # allowed
+              *)
+                only_docs=false
+                break
+                ;;
+            esac
+          done <<EOF
+${CHANGED}
+EOF
+
+          if [ "$only_docs" = true ]; then
+            echo "PR changes are only docs/tests/fixtures or Markdown files — skipping changie requirement."
+            exit 0
+          fi
+
+          if echo "${CHANGED}" | grep -qE '^changes/unreleased/'; then
+            echo "Found changie fragment under changes/unreleased/ — OK"
+            exit 0
+          fi
+
+          echo "No changie fragment detected in this PR."
+          echo "Please add a changie fragment (run 'changie new') and include it under changes/unreleased/ before opening the PR."
+          exit 1

@@ -621,7 +621,10 @@ class TestPluginOrdering:
 
         mocker.patch("pathlib.Path.cwd", return_value=tmp_path)
         mocker.patch.object(Path, "glob", return_value=[])  # No built-ins
-        mocker.patch("importlib.metadata.entry_points", return_value=[mock_ep_a, mock_ep_b, mock_ep_c])
+        mocker.patch(
+            "importlib.metadata.entry_points",
+            return_value=[mock_ep_a, mock_ep_b, mock_ep_c],
+        )
 
         manager = XbtPluginManager()
 
@@ -665,4 +668,7 @@ class TestPluginOrdering:
 
         # Expect warnings for unknown_plugin and builtin_x (disabled)
         warn_msgs = [r.message for r in caplog.records if r.levelname == "WARNING"]
-        assert any("unknown or disabled" in str(m) or "not found or disabled" in str(m) for m in warn_msgs)
+        assert any(
+            "unknown or disabled" in str(m) or "not found or disabled" in str(m)
+            for m in warn_msgs
+        )

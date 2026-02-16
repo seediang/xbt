@@ -259,7 +259,11 @@ class XbtPluginManager:
         discovered_map = {p["name"]: p for p in self._discovered_plugins_raw}
 
         # Determine allowed candidates (respecting enabled/disabled)
-        candidates = [p for p in self._discovered_plugins_raw if self._is_plugin_allowed(p["name"])]
+        candidates = [
+            p
+            for p in self._discovered_plugins_raw
+            if self._is_plugin_allowed(p["name"])
+        ]
         candidate_names = [p["name"] for p in candidates]
 
         final_order: List[str] = []
@@ -272,7 +276,9 @@ class XbtPluginManager:
                     final_order.append(name)
                     used.add(name)
                 else:
-                    logger.warning(f"Plugin specified in plugin_order not found or disabled: {name}")
+                    logger.warning(
+                        f"Plugin specified in plugin_order not found or disabled: {name}"
+                    )
 
         # Append remaining candidates in discovery order
         for name in candidate_names:
@@ -299,6 +305,7 @@ class XbtPluginManager:
                 logger.debug(f"Registered plugin: {name}")
             except Exception as e:
                 logger.warning(f"Failed to register plugin {name}: {e}")
+
     def hook_register_commands(self, cli_group: Any) -> None:
         """
         Call xbt_register_commands hook for all plugins.
