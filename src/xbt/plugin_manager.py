@@ -53,7 +53,9 @@ class XbtPluginManager:
         self._load_config()
 
         self._discover_and_load_plugins()
-        logger.info(f"Loaded {len(self._plugins_loaded)} plugins: {self._plugins_loaded}")
+        logger.info(
+            f"Loaded {len(self._plugins_loaded)} plugins: {self._plugins_loaded}"
+        )
 
     def _load_config(self):
         """Load plugin configuration from xbt.yml file."""
@@ -238,7 +240,9 @@ class XbtPluginManager:
                 )
                 logger.debug(f"Discovered entry point plugin: {entry_point.name}")
             except Exception as e:
-                logger.warning(f"Failed to load entry point plugin {entry_point.name}: {e}")
+                logger.warning(
+                    f"Failed to load entry point plugin {entry_point.name}: {e}"
+                )
 
         # Note: _register_plugins_in_order will apply config-based filtering
         # (enabled/disabled) when doing the final registrations.
@@ -255,7 +259,11 @@ class XbtPluginManager:
         discovered_map = {p["name"]: p for p in self._discovered_plugins_raw}
 
         # Determine allowed candidates (respecting enabled/disabled)
-        candidates = [p for p in self._discovered_plugins_raw if self._is_plugin_allowed(p["name"])]
+        candidates = [
+            p
+            for p in self._discovered_plugins_raw
+            if self._is_plugin_allowed(p["name"])
+        ]
         candidate_names = [p["name"] for p in candidates]
 
         final_order: List[str] = []
@@ -318,7 +326,9 @@ class XbtPluginManager:
         # No filter means always execute
         return True
 
-    def hook_register_commands(self, cli_group: Any, context: Optional[Any] = None) -> None:
+    def hook_register_commands(
+        self, cli_group: Any, context: Optional[Any] = None
+    ) -> None:
         """
         Call xbt_register_commands hook for all plugins.
 
@@ -354,7 +364,9 @@ class XbtPluginManager:
             logger.warning(f"Error in xbt_register_callbacks hooks: {e}")
         return callbacks
 
-    def hook_pre_invoke(self, args: List[str], context: Optional[Any] = None) -> List[str]:
+    def hook_pre_invoke(
+        self, args: List[str], context: Optional[Any] = None
+    ) -> List[str]:
         """
         Call xbt_pre_invoke hook for all plugins, chaining modifications.
 
@@ -379,7 +391,9 @@ class XbtPluginManager:
             logger.warning(f"Error in xbt_pre_invoke hooks: {e}")
         return args
 
-    def hook_post_invoke(self, args: List[str], result: Any, context: Optional[Any] = None) -> None:
+    def hook_post_invoke(
+        self, args: List[str], result: Any, context: Optional[Any] = None
+    ) -> None:
         """
         Call xbt_post_invoke hook for all plugins.
 

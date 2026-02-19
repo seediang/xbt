@@ -70,7 +70,9 @@ def xbt_register_callbacks(
 
 
 @hookspec
-def xbt_pre_invoke(args: List[str], context: Optional[XbtContext] = None) -> Optional[List[str]]:
+def xbt_pre_invoke(
+    args: List[str], context: Optional[XbtContext] = None
+) -> Optional[List[str]]:
     """
     Modify command-line arguments before dbt processing.
 
@@ -100,7 +102,9 @@ def xbt_pre_invoke(args: List[str], context: Optional[XbtContext] = None) -> Opt
 
 
 @hookspec
-def xbt_post_invoke(args: List[str], result: Any, context: Optional[XbtContext] = None) -> None:
+def xbt_post_invoke(
+    args: List[str], result: Any, context: Optional[XbtContext] = None
+) -> None:
     """
     React to dbt invocation results.
 

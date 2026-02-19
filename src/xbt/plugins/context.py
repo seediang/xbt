@@ -37,16 +37,65 @@ class XbtContext:
     result: Any = None
 
     @property
-    def is_plugin_management_command(self) -> bool:
-        """Return True if this is an xbt plugin/plugins command.
-
-        Plugin management commands are handled specially and most plugins
-        should not perform their normal operations for these commands.
+    def is_plugin_command(self) -> bool:
+        """Return True if this is a plugin management command ("plugin"/"plugins").
 
         Returns:
             True if command is "plugin" or "plugins".
         """
         return self.command in {"plugin", "plugins"}
+
+    @property
+    def is_dbt_command(self) -> bool:
+        """Return True if this is a standard dbt command.
+
+        Standard dbt commands include: run, test, compile, parse, snapshot,
+        seed, freshness, deps, docs, debug, build, list, retry, source,
+        exposure, metric, and other core dbt functionality.
+
+        Returns:
+            True if command is a known dbt command. False for plugin or xbt
+            custom commands.
+        """
+        if self.command is None:
+            return False
+
+        dbt_commands = {
+            "build",
+            "compile",
+            "debug",
+            "deps",
+            "docs",
+            "exposure",
+            "freshness",
+            "list",
+            "metric",
+            "parse",
+            "retry",
+            "run",
+            "seed",
+            "snapshot",
+            "source",
+            "test",
+        }
+        return self.command in dbt_commands
+
+    @property
+    def is_xbt_command(self) -> bool:
+        """Return True if this is an xbt or plugin-added command.
+
+        These are commands that are not standard dbt commands and not plugin
+        management commands. They are either built-in xbt commands or commands
+        added by plugins.
+
+        Returns:
+            True if command is not a dbt command and not a plugin command.
+        """
+        return (
+            self.command is not None
+            and not self.is_dbt_command
+            and not self.is_plugin_command
+        )
 
     @property
     def has_project(self) -> bool:

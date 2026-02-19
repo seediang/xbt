@@ -29,42 +29,6 @@ class TestXbtContext:
         assert context.plugin_name == "test_plugin"
         assert context.result is None
 
-    def test_is_plugin_management_command_true(self):
-        """Test is_plugin_management_command returns True for plugin command."""
-        context = XbtContext(
-            args=["plugin", "list"],
-            command="plugin",
-            project_dir=None,
-            workspace_root=Path.cwd(),
-            plugin_name="test",
-        )
-
-        assert context.is_plugin_management_command is True
-
-    def test_is_plugin_management_command_for_plugins(self):
-        """Test is_plugin_management_command returns True for plugins command."""
-        context = XbtContext(
-            args=["plugins", "list"],
-            command="plugins",
-            project_dir=None,
-            workspace_root=Path.cwd(),
-            plugin_name="test",
-        )
-
-        assert context.is_plugin_management_command is True
-
-    def test_is_plugin_management_command_false(self):
-        """Test is_plugin_management_command returns False for dbt commands."""
-        context = XbtContext(
-            args=["run"],
-            command="run",
-            project_dir=None,
-            workspace_root=Path.cwd(),
-            plugin_name="test",
-        )
-
-        assert context.is_plugin_management_command is False
-
     def test_has_project_true(self, tmp_path):
         """Test has_project returns True when project_dir exists."""
         context = XbtContext(
@@ -136,3 +100,105 @@ class TestXbtContext:
 
         # Original should not change (depends on implementation)
         assert original_args == ["run", "model1"]
+
+    def test_is_plugin_command_true(self):
+        """Test is_plugin_command returns True for plugin management commands."""
+        for cmd in ["plugin", "plugins"]:
+            context = XbtContext(
+                args=[cmd],
+                command=cmd,
+                project_dir=None,
+                workspace_root=Path.cwd(),
+                plugin_name="test",
+            )
+            assert context.is_plugin_command is True
+
+    def test_is_plugin_command_false(self):
+        """Test is_plugin_command returns False for dbt commands."""
+        context = XbtContext(
+            args=["run"],
+            command="run",
+            project_dir=None,
+            workspace_root=Path.cwd(),
+            plugin_name="test",
+        )
+        assert context.is_plugin_command is False
+
+    def test_is_dbt_command_true(self):
+        """Test is_dbt_command returns True for known dbt commands."""
+        dbt_commands = ["run", "test", "compile", "parse", "seed", "snapshot", "build"]
+        for cmd in dbt_commands:
+            context = XbtContext(
+                args=[cmd],
+                command=cmd,
+                project_dir=None,
+                workspace_root=Path.cwd(),
+                plugin_name="test",
+            )
+            assert context.is_dbt_command is True, f"Failed for command: {cmd}"
+
+    def test_is_dbt_command_false(self):
+        """Test is_dbt_command returns False for non-dbt commands."""
+        context = XbtContext(
+            args=["custom"],
+            command="custom",
+            project_dir=None,
+            workspace_root=Path.cwd(),
+            plugin_name="test",
+        )
+        assert context.is_dbt_command is False
+
+    def test_is_dbt_command_none(self):
+        """Test is_dbt_command returns False when command is None."""
+        context = XbtContext(
+            args=[],
+            command=None,
+            project_dir=None,
+            workspace_root=Path.cwd(),
+            plugin_name="test",
+        )
+        assert context.is_dbt_command is False
+
+    def test_is_xbt_command_true(self):
+        """Test is_xbt_command returns True for xbt/plugin-added commands."""
+        context = XbtContext(
+            args=["custom"],
+            command="custom",
+            project_dir=None,
+            workspace_root=Path.cwd(),
+            plugin_name="test",
+        )
+        assert context.is_xbt_command is True
+
+    def test_is_xbt_command_false_dbt(self):
+        """Test is_xbt_command returns False for dbt commands."""
+        context = XbtContext(
+            args=["run"],
+            command="run",
+            project_dir=None,
+            workspace_root=Path.cwd(),
+            plugin_name="test",
+        )
+        assert context.is_xbt_command is False
+
+    def test_is_xbt_command_false_plugin(self):
+        """Test is_xbt_command returns False for plugin commands."""
+        context = XbtContext(
+            args=["plugin"],
+            command="plugin",
+            project_dir=None,
+            workspace_root=Path.cwd(),
+            plugin_name="test",
+        )
+        assert context.is_xbt_command is False
+
+    def test_is_xbt_command_none(self):
+        """Test is_xbt_command returns False when command is None."""
+        context = XbtContext(
+            args=[],
+            command=None,
+            project_dir=None,
+            workspace_root=Path.cwd(),
+            plugin_name="test",
+        )
+        assert context.is_xbt_command is False

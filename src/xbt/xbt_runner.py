@@ -38,7 +38,9 @@ class xbtRunner(dbtRunner):
         self.plugin_manager.hook_register_commands(cli_group=cli, context=init_context)
 
         # Allow plugins to register callbacks, merge with provided callbacks
-        callbacks.extend(self.plugin_manager.hook_register_callbacks(context=init_context))
+        callbacks.extend(
+            self.plugin_manager.hook_register_callbacks(context=init_context)
+        )
 
         # Pass None if callbacks is empty (preserve original behavior)
         super().__init__(manifest=manifest, callbacks=callbacks if callbacks else None)

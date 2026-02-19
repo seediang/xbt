@@ -221,7 +221,9 @@ class TestFindWorkspaceRoot:
 
         # Search with max_depth=2 should not find the marker
         result = find_workspace_root(deep_dir, max_depth=2)
-        assert result == deep_dir  # Returns start_dir because max_depth prevents reaching marker
+        assert (
+            result == deep_dir
+        )  # Returns start_dir because max_depth prevents reaching marker
 
 
 class TestFormatStatusMessage:

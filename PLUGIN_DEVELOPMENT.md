@@ -47,8 +47,15 @@ The `XbtContext` object passed to hooks provides:
 | `workspace_root` | `Path` | Repository/workspace root directory |
 | `plugin_name` | `str` | Name of the current plugin |
 | `result` | `Optional[Any]` | dbt execution result (post-invoke hooks only) |
-| `is_plugin_management_command` | `bool` (property) | True if "plugin" or "plugins" command |
-| `has_project` | `bool` (property) | True if valid project directory exists |
+
+### Context Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `is_plugin_command` | `bool` | True if "plugin" or "plugins" command |
+| `is_dbt_command` | `bool` | True if command is a standard dbt command (run, test, compile, etc.) |
+| `is_xbt_command` | `bool` | True if command is an xbt or plugin-added command (not dbt, not plugin mgmt) |
+| `has_project` | `bool` | True if valid dbt project directory exists |
 
 ## Hook Reference
 
@@ -268,6 +275,28 @@ while current != current.parent:
     if (current / "dbt_project.yml").exists():
         project_dir = current
         break
+```
+
+### Classify Commands with Context Properties
+
+Use the command classification properties to determine how to handle different command types:
+
+```python
+from xbt.plugins import hookimpl, XbtContext
+
+@hookimpl
+def xbt_post_invoke(context: XbtContext) -> None:
+    # Skip plugin management commands
+    if context.is_plugin_command:
+        return
+    
+    # Handle dbt commands specially
+    if context.is_dbt_command:
+        print(f"dbt command completed: {context.command}")
+    
+    # Handle custom xbt/plugin commands
+    elif context.is_xbt_command:
+        print(f"custom command: {context.command}")
 ```
 
 ## Real-World Examples

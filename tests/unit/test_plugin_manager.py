@@ -41,7 +41,9 @@ class TestXbtPluginManagerSingleton:
 class TestConfigLoading:
     """Test configuration file loading and parsing."""
 
-    def test_find_config_file_in_current_directory(self, reset_plugin_manager, tmp_path, mocker):
+    def test_find_config_file_in_current_directory(
+        self, reset_plugin_manager, tmp_path, mocker
+    ):
         """Test finding xbt.yml in current directory."""
         config_file = tmp_path / "xbt.yml"
         config_file.write_text("enabled_plugins: []")
@@ -53,7 +55,9 @@ class TestConfigLoading:
 
         assert found_config == config_file
 
-    def test_find_config_file_in_parent_directory(self, reset_plugin_manager, tmp_path, mocker):
+    def test_find_config_file_in_parent_directory(
+        self, reset_plugin_manager, tmp_path, mocker
+    ):
         """Test finding xbt.yml in parent directory."""
         parent_dir = tmp_path
         child_dir = parent_dir / "subdir" / "subdir2"
@@ -78,7 +82,9 @@ class TestConfigLoading:
 
         assert found_config is None
 
-    def test_find_config_file_stops_at_10_levels(self, reset_plugin_manager, tmp_path, mocker):
+    def test_find_config_file_stops_at_10_levels(
+        self, reset_plugin_manager, tmp_path, mocker
+    ):
         """Test that config search stops after 10 directory levels."""
         # Create a deep directory structure (11 levels)
         deep_dir = tmp_path
@@ -98,21 +104,27 @@ class TestConfigLoading:
         # Should not find it (too deep)
         assert found_config is None
 
-    def test_load_config_with_enabled_plugins(self, reset_plugin_manager, tmp_path, mocker):
+    def test_load_config_with_enabled_plugins(
+        self, reset_plugin_manager, tmp_path, mocker
+    ):
         """Test loading config with enabled_plugins list."""
         config_file = tmp_path / "xbt.yml"
         config_file.write_text("enabled_plugins:\n  - plugin1\n  - plugin2\n")
 
         mocker.patch("pathlib.Path.cwd", return_value=tmp_path)
         mocker.patch.object(Path, "glob", return_value=[])  # No built-in plugins
-        mocker.patch("importlib.metadata.entry_points", return_value=[])  # No external plugins
+        mocker.patch(
+            "importlib.metadata.entry_points", return_value=[]
+        )  # No external plugins
 
         manager = XbtPluginManager()
 
         assert manager._enabled_plugins == {"plugin1", "plugin2"}
         assert manager._disabled_plugins == set()
 
-    def test_load_config_with_disabled_plugins(self, reset_plugin_manager, tmp_path, mocker):
+    def test_load_config_with_disabled_plugins(
+        self, reset_plugin_manager, tmp_path, mocker
+    ):
         """Test loading config with disabled_plugins list."""
         config_file = tmp_path / "xbt.yml"
         config_file.write_text("disabled_plugins:\n  - plugin3\n  - plugin4\n")
@@ -126,7 +138,9 @@ class TestConfigLoading:
         assert manager._enabled_plugins is None
         assert manager._disabled_plugins == {"plugin3", "plugin4"}
 
-    def test_load_config_empty_enabled_plugins(self, reset_plugin_manager, tmp_path, mocker):
+    def test_load_config_empty_enabled_plugins(
+        self, reset_plugin_manager, tmp_path, mocker
+    ):
         """Test that empty enabled_plugins list disables all plugins."""
         config_file = tmp_path / "xbt.yml"
         config_file.write_text("enabled_plugins: []\n")
@@ -181,7 +195,9 @@ class TestPluginFiltering:
 
         assert manager._is_plugin_allowed("any_plugin")
 
-    def test_is_plugin_allowed_with_whitelist(self, reset_plugin_manager, tmp_path, mocker):
+    def test_is_plugin_allowed_with_whitelist(
+        self, reset_plugin_manager, tmp_path, mocker
+    ):
         """Test whitelist mode (enabled_plugins)."""
         config_file = tmp_path / "xbt.yml"
         config_file.write_text("enabled_plugins:\n  - allowed_plugin\n")
@@ -195,7 +211,9 @@ class TestPluginFiltering:
         assert manager._is_plugin_allowed("allowed_plugin")
         assert not manager._is_plugin_allowed("other_plugin")
 
-    def test_is_plugin_allowed_with_blacklist(self, reset_plugin_manager, tmp_path, mocker):
+    def test_is_plugin_allowed_with_blacklist(
+        self, reset_plugin_manager, tmp_path, mocker
+    ):
         """Test blacklist mode (disabled_plugins)."""
         config_file = tmp_path / "xbt.yml"
         config_file.write_text("disabled_plugins:\n  - blocked_plugin\n")
@@ -212,7 +230,9 @@ class TestPluginFiltering:
     def test_disabled_overrides_enabled(self, reset_plugin_manager, tmp_path, mocker):
         """Test that disabled_plugins overrides enabled_plugins."""
         config_file = tmp_path / "xbt.yml"
-        config_file.write_text("enabled_plugins:\n  - plugin1\ndisabled_plugins:\n  - plugin1\n")
+        config_file.write_text(
+            "enabled_plugins:\n  - plugin1\ndisabled_plugins:\n  - plugin1\n"
+        )
 
         mocker.patch("pathlib.Path.cwd", return_value=tmp_path)
         mocker.patch.object(Path, "glob", return_value=[])
@@ -227,7 +247,9 @@ class TestPluginFiltering:
 class TestBuiltinPluginLoading:
     """Test loading of built-in plugins."""
 
-    def test_load_builtin_plugins_directory_not_exists(self, reset_plugin_manager, mocker):
+    def test_load_builtin_plugins_directory_not_exists(
+        self, reset_plugin_manager, mocker
+    ):
         """Test handling when _plugins directory doesn't exist."""
         mock_plugins_dir = Mock()
         mock_plugins_dir.exists.return_value = False
@@ -289,7 +311,9 @@ class TestBuiltinPluginLoading:
 
         # Test passes because the filtering logic is correct
 
-    def test_load_builtin_plugin_failure_logged(self, reset_plugin_manager, mocker, caplog):
+    def test_load_builtin_plugin_failure_logged(
+        self, reset_plugin_manager, mocker, caplog
+    ):
         """Test that plugin load failures are logged but don't crash."""
         mock_plugin_files = [
             Mock(name="broken_plugin.py", stem="broken_plugin"),
@@ -320,7 +344,9 @@ class TestBuiltinPluginLoading:
 class TestEntryPointPluginLoading:
     """Test loading of external plugins via entry points."""
 
-    def test_load_entry_point_plugins_python310_plus(self, reset_plugin_manager, mocker):
+    def test_load_entry_point_plugins_python310_plus(
+        self, reset_plugin_manager, mocker
+    ):
         """Test loading entry point plugins with Python 3.10+ API."""
         mock_plugin = Mock()
         mock_ep = Mock()
@@ -332,7 +358,9 @@ class TestEntryPointPluginLoading:
         mocker.patch("pathlib.Path.cwd", return_value=Path("/tmp"))
         mocker.patch.object(Path, "glob", return_value=[])
         mocker.patch("importlib.metadata.entry_points", return_value=[mock_ep])
-        mocker.patch("importlib.metadata.distribution", side_effect=Exception("Not found"))
+        mocker.patch(
+            "importlib.metadata.distribution", side_effect=Exception("Not found")
+        )
 
         manager = XbtPluginManager()
 
@@ -363,7 +391,9 @@ class TestEntryPointPluginLoading:
         plugin_info = manager._plugin_registry[0]
         assert plugin_info["version"] == "2.3.4"
 
-    def test_load_entry_point_plugin_failure_logged(self, reset_plugin_manager, mocker, caplog):
+    def test_load_entry_point_plugin_failure_logged(
+        self, reset_plugin_manager, mocker, caplog
+    ):
         """Test that entry point load failures are logged but don't crash."""
         mock_ep = Mock()
         mock_ep.name = "broken_plugin"
@@ -381,7 +411,9 @@ class TestEntryPointPluginLoading:
         # Plugin should not be loaded
         assert "broken_plugin" not in manager._plugins_loaded
 
-    def test_load_entry_point_plugins_python39_fallback(self, reset_plugin_manager, mocker):
+    def test_load_entry_point_plugins_python39_fallback(
+        self, reset_plugin_manager, mocker
+    ):
         """Test fallback for Python < 3.10 entry points API."""
         mock_plugin = Mock()
         mock_ep = Mock()
@@ -399,8 +431,12 @@ class TestEntryPointPluginLoading:
 
         mocker.patch("pathlib.Path.cwd", return_value=Path("/tmp"))
         mocker.patch.object(Path, "glob", return_value=[])
-        mocker.patch("importlib.metadata.entry_points", side_effect=mock_entry_points_func)
-        mocker.patch("importlib.metadata.distribution", side_effect=Exception("Not found"))
+        mocker.patch(
+            "importlib.metadata.entry_points", side_effect=mock_entry_points_func
+        )
+        mocker.patch(
+            "importlib.metadata.distribution", side_effect=Exception("Not found")
+        )
 
         manager = XbtPluginManager()
 
@@ -446,7 +482,9 @@ class TestHookInvocation:
 
         assert result == [callback1, callback2, callback3]
 
-    def test_hook_register_callbacks_handles_single_callback(self, reset_plugin_manager, mocker):
+    def test_hook_register_callbacks_handles_single_callback(
+        self, reset_plugin_manager, mocker
+    ):
         """Test that single callbacks (non-list) are handled."""
         mocker.patch("pathlib.Path.cwd", return_value=Path("/tmp"))
         mocker.patch.object(Path, "glob", return_value=[])
@@ -455,7 +493,9 @@ class TestHookInvocation:
         manager = XbtPluginManager()
 
         callback = Mock()
-        mocker.patch.object(manager.pm.hook, "xbt_register_callbacks", return_value=[callback])
+        mocker.patch.object(
+            manager.pm.hook, "xbt_register_callbacks", return_value=[callback]
+        )
 
         result = manager.hook_register_callbacks()
 
@@ -498,7 +538,9 @@ class TestHookInvocation:
         mock_result = Mock()
         manager.hook_post_invoke(args=["test"], result=mock_result, context=None)
 
-        mock_hook.assert_called_once_with(args=["test"], result=mock_result, context=None)
+        mock_hook.assert_called_once_with(
+            args=["test"], result=mock_result, context=None
+        )
 
     def test_hook_invocation_error_handling(self, reset_plugin_manager, mocker, caplog):
         """Test that hook errors are caught and logged."""
@@ -507,7 +549,9 @@ class TestHookInvocation:
         mocker.patch("importlib.metadata.entry_points", return_value=[])
 
         manager = XbtPluginManager()
-        mocker.patch.object(manager.pm.hook, "xbt_pre_invoke", side_effect=Exception("Hook error"))
+        mocker.patch.object(
+            manager.pm.hook, "xbt_pre_invoke", side_effect=Exception("Hook error")
+        )
 
         # Should not raise exception
         result = manager.hook_pre_invoke(args=["test"])
@@ -627,5 +671,6 @@ class TestPluginOrdering:
         # Expect warnings for unknown_plugin and builtin_x (disabled)
         warn_msgs = [r.message for r in caplog.records if r.levelname == "WARNING"]
         assert any(
-            "unknown or disabled" in str(m) or "not found or disabled" in str(m) for m in warn_msgs
+            "unknown or disabled" in str(m) or "not found or disabled" in str(m)
+            for m in warn_msgs
         )
