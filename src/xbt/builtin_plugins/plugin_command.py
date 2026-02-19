@@ -53,21 +53,3 @@ def xbt_register_commands(cli_group: Any) -> None:
             print(f"     Source:  {plugin['source']}")
             print(f"     Module:  {plugin['module']}")
             print()
-
-
-@hookimpl
-def xbt_register_callbacks() -> Optional[List[Callable[[Any], None]]]:
-    """Example implementation."""
-    return None
-
-
-@hookimpl
-def xbt_pre_invoke(args: List[str]) -> Optional[List[str]]:
-    """Example implementation."""
-    return None
-
-
-@hookimpl
-def xbt_post_invoke(args: List[str], result: Any) -> None:
-    """Example implementation."""
-    pass

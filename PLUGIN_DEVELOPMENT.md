@@ -88,7 +88,7 @@ that hook.
 PreInvokeContext and PostInvokeContext. `has_project` is available on all
 contexts.
 
-Built-in commands come from plugins discovered in [src/xbt/_plugins/](src/xbt/_plugins/).
+Built-in commands come from plugins discovered in [src/xbt/builtin_plugins/](src/xbt/builtin_plugins/).
 
 ### Dynamic Command Classification
 
@@ -360,7 +360,7 @@ def xbt_post_invoke(context: PostInvokeContext) -> None:
 
 ## Real-World Examples
 
-See [src/xbt/_plugins/](src/xbt/_plugins/) for built-in plugins:
+See [src/xbt/builtin_plugins/](src/xbt/builtin_plugins/) for built-in plugins:
 
-- [example_plugin.py](src/xbt/_plugins/example_plugin.py) – Reference implementation with all hooks
-- [plugin_command.py](src/xbt/_plugins/plugin_command.py) – Real-world plugin that adds the `xbt plugin list` command
+- [example_plugin.py](src/xbt/builtin_plugins/example_plugin.py) – Reference implementation with all hooks
+- [plugin_command.py](src/xbt/builtin_plugins/plugin_command.py) – Real-world plugin that adds the `xbt plugin list` command

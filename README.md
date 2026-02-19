@@ -49,7 +49,7 @@ xbt features a plugin system that minimizes boilerplate by providing:
 ### Automatic Plugin Discovery
 
 xbt discovers plugins from:
-- Built-in plugins in `src/xbt/_plugins/`
+- Built-in plugins in `src/xbt/builtin_plugins/`
 - External packages via entry points (group: `xbt`)
 
 Plugins are auto-loaded and immediately available—no registration code needed.
@@ -192,7 +192,7 @@ xbt-core/
 │   │   ├── filter.py            # HookFilter for command filtering
 │   │   ├── utils.py             # Shared plugin utilities
 │   │   └── config.py            # PluginConfig base class
-│   ├── _plugins/                # Built-in plugins
+│   ├── builtin_plugins/         # Built-in plugins
 │   │   ├── __init__.py
 │   │   ├── example_plugin.py    # Reference implementation
 │   │   └── plugin_command.py    # CLI commands plugin

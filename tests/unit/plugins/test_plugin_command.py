@@ -1,9 +1,9 @@
-"""Unit tests for _plugins/plugin_command.py"""
+"""Unit tests for builtin_plugins/plugin_command.py"""
 
 from pathlib import Path
 from unittest.mock import MagicMock, Mock
 
-from xbt._plugins import plugin_command
+from xbt.builtin_plugins import plugin_command
 
 
 class TestPluginCommandModule:

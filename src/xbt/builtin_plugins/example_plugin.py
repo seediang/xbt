@@ -5,7 +5,7 @@ This plugin demonstrates all four hook types and serves as a reference
 for plugin developers. It adds minimal functionality but shows the structure.
 
 To disable this example plugin in production, delete this file or
-rename it to something that doesn't match *.py in the _plugins/ directory.
+rename it to something that doesn't match *.py in the builtin_plugins/ directory.
 """
 
 import logging

@@ -26,7 +26,7 @@ class XbtPluginManager:
     Manages xbt plugins using pluggy.
 
     Discovers plugins from:
-    1. Built-in plugins in src/xbt/_plugins/
+    1. Built-in plugins in src/xbt/builtin_plugins/
     2. External packages via entry points (group: xbt)
 
     Plugins can extend xbt by implementing hooks defined in hookspecs.py.
@@ -139,7 +139,7 @@ class XbtPluginManager:
 
     def _discover_and_load_plugins(self):
         """Discover and load plugins from all sources."""
-        # Load built-in plugins from src/xbt/_plugins/
+        # Load built-in plugins from src/xbt/builtin_plugins/
         # Discover built-in and external plugins; registration happens
         # after ordering is computed to allow `plugin_order` to take effect.
         self._load_builtin_plugins()
@@ -150,20 +150,20 @@ class XbtPluginManager:
         self._register_plugins_in_order()
 
     def _load_builtin_plugins(self):
-        """Load built-in plugins from the _plugins package."""
-        plugins_dir = Path(__file__).parent / "_plugins"
+        """Load built-in plugins from the builtin_plugins package."""
+        plugins_dir = Path(__file__).parent / "builtin_plugins"
 
         if not plugins_dir.exists():
             logger.debug("No built-in plugins directory found")
             return
 
         try:
-            # Add _plugins directory to sys.path temporarily for imports
+            # Add builtin_plugins directory to sys.path temporarily for imports
             plugins_path = str(plugins_dir.parent)
             if plugins_path not in sys.path:
                 sys.path.insert(0, plugins_path)
 
-            # Discover and import all .py modules in _plugins/ (except __init__)
+            # Discover and import all .py modules in builtin_plugins/ (except __init__)
             for plugin_file in plugins_dir.glob("*.py"):
                 if plugin_file.name.startswith("__"):
                     continue
@@ -171,11 +171,11 @@ class XbtPluginManager:
                 module_name = plugin_file.stem
                 try:
                     spec = importlib.util.spec_from_file_location(
-                        f"xbt._plugins.{module_name}", plugin_file
+                        f"xbt.builtin_plugins.{module_name}", plugin_file
                     )
                     if spec and spec.loader:
                         module = importlib.util.module_from_spec(spec)
-                        sys.modules[f"xbt._plugins.{module_name}"] = module
+                        sys.modules[f"xbt.builtin_plugins.{module_name}"] = module
                         spec.loader.exec_module(module)
 
                         # Check if plugin is allowed
@@ -193,7 +193,7 @@ class XbtPluginManager:
                                 "obj": module,
                                 "version": version,
                                 "source": "builtin",
-                                "module": f"xbt._plugins.{module_name}",
+                                "module": f"xbt.builtin_plugins.{module_name}",
                             }
                         )
                         logger.debug(f"Discovered built-in plugin: {module_name}")

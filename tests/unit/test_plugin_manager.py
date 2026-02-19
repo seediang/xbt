@@ -250,7 +250,7 @@ class TestBuiltinPluginLoading:
     def test_load_builtin_plugins_directory_not_exists(
         self, reset_plugin_manager, mocker
     ):
-        """Test handling when _plugins directory doesn't exist."""
+        """Test handling when builtin_plugins directory doesn't exist."""
         mock_plugins_dir = Mock()
         mock_plugins_dir.exists.return_value = False
 
@@ -278,7 +278,7 @@ class TestBuiltinPluginLoading:
 
         # Better Path mock that handles __truediv__ properly
         def path_div_side_effect(path_self, other):
-            if "_plugins" in str(other):
+            if "builtin_plugins" in str(other):
                 return mock_plugins_dir
             return Path(str(path_self)) / str(other)
 
