@@ -23,9 +23,7 @@ class TestXbtRunnerInitialization:
         mocker.patch("xbt.xbt_runner.cli", mock_cli_group)
 
         # Mock dbtRunner.__init__
-        mock_super_init = mocker.patch(
-            "dbt.cli.main.dbtRunner.__init__", return_value=None
-        )
+        mock_super_init = mocker.patch("dbt.cli.main.dbtRunner.__init__", return_value=None)
 
         provided_callback = Mock()
         xbtRunner(callbacks=[provided_callback])
@@ -45,14 +43,10 @@ class TestXbtRunnerInitialization:
         # Mock plugin manager to return no callbacks
         mock_pm = Mock()
         mock_pm.hook_register_callbacks.return_value = []
-        mocker.patch(
-            "xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm
-        )
+        mocker.patch("xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm)
 
         # Mock dbtRunner.__init__
-        mock_super_init = mocker.patch(
-            "dbt.cli.main.dbtRunner.__init__", return_value=None
-        )
+        mock_super_init = mocker.patch("dbt.cli.main.dbtRunner.__init__", return_value=None)
 
         xbtRunner()
 
@@ -60,24 +54,26 @@ class TestXbtRunnerInitialization:
         call_kwargs = mock_super_init.call_args.kwargs
         assert call_kwargs["callbacks"] is None
 
-    def test_init_calls_plugin_manager_hooks(
-        self, reset_plugin_manager, mocker, mock_cli_group
-    ):
+    def test_init_calls_plugin_manager_hooks(self, reset_plugin_manager, mocker, mock_cli_group):
         """Test that plugin manager registration hooks are called."""
         mocker.patch("xbt.xbt_runner.cli", mock_cli_group)
 
         # Mock plugin manager
         mock_pm = Mock()
         mock_pm.hook_register_callbacks.return_value = []
-        mocker.patch(
-            "xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm
-        )
+        mocker.patch("xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm)
 
         xbtRunner()
 
         # Verify hooks were called
-        mock_pm.hook_register_commands.assert_called_once_with(cli_group=mock_cli_group)
-        mock_pm.hook_register_callbacks.assert_called_once()
+        # hook_register_commands should be called with cli_group and context
+        assert mock_pm.hook_register_commands.call_count == 1
+        call_args = mock_pm.hook_register_commands.call_args
+        assert call_args[1]["cli_group"] == mock_cli_group
+        assert call_args[1]["context"] is not None  # Should have context
+
+        # hook_register_callbacks should be called
+        assert mock_pm.hook_register_callbacks.call_count == 1
 
 
 class TestCallbackMerging:
@@ -97,14 +93,10 @@ class TestCallbackMerging:
             plugin_callback1,
             plugin_callback2,
         ]
-        mocker.patch(
-            "xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm
-        )
+        mocker.patch("xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm)
 
         # Mock dbtRunner.__init__
-        mock_super_init = mocker.patch(
-            "dbt.cli.main.dbtRunner.__init__", return_value=None
-        )
+        mock_super_init = mocker.patch("dbt.cli.main.dbtRunner.__init__", return_value=None)
 
         provided_callback = Mock()
         xbtRunner(callbacks=[provided_callback])
@@ -125,14 +117,10 @@ class TestCallbackMerging:
         plugin_callback = Mock()
         mock_pm = Mock()
         mock_pm.hook_register_callbacks.return_value = [plugin_callback]
-        mocker.patch(
-            "xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm
-        )
+        mocker.patch("xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm)
 
         # Mock dbtRunner.__init__
-        mock_super_init = mocker.patch(
-            "dbt.cli.main.dbtRunner.__init__", return_value=None
-        )
+        mock_super_init = mocker.patch("dbt.cli.main.dbtRunner.__init__", return_value=None)
 
         xbtRunner()
 
@@ -154,22 +142,21 @@ class TestInvokeMethod:
         mock_pm = Mock()
         mock_pm.hook_register_callbacks.return_value = []
         mock_pm.hook_pre_invoke.return_value = ["modified", "args"]
-        mocker.patch(
-            "xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm
-        )
+        mocker.patch("xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm)
 
         # Mock parent invoke
         mock_result = Mock()
         mock_result.success = True
-        mock_super_invoke = mocker.patch(
-            "dbt.cli.main.dbtRunner.invoke", return_value=mock_result
-        )
+        mock_super_invoke = mocker.patch("dbt.cli.main.dbtRunner.invoke", return_value=mock_result)
 
         runner = xbtRunner()
         runner.invoke(["original", "args"])
 
-        # Verify pre_invoke was called with original args
-        mock_pm.hook_pre_invoke.assert_called_once_with(args=["original", "args"])
+        # Verify pre_invoke was called with original args and context
+        call_args = mock_pm.hook_pre_invoke.call_args
+        assert call_args[1]["args"] == ["original", "args"]
+        assert call_args[1]["context"] is not None
+        assert call_args[1]["context"].command == "original"  # should extract "original" as command
 
         # Verify parent invoke was called with modified args
         mock_super_invoke.assert_called_once_with(["modified", "args"])
@@ -182,9 +169,7 @@ class TestInvokeMethod:
         mock_pm = Mock()
         mock_pm.hook_register_callbacks.return_value = []
         mock_pm.hook_pre_invoke.return_value = ["test", "args"]
-        mocker.patch(
-            "xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm
-        )
+        mocker.patch("xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm)
 
         # Mock parent invoke
         mock_result = Mock()
@@ -194,14 +179,14 @@ class TestInvokeMethod:
         runner = xbtRunner()
         runner.invoke(["test", "args"])
 
-        # Verify post_invoke was called with args and result
-        mock_pm.hook_post_invoke.assert_called_once_with(
-            args=["test", "args"], result=mock_result
-        )
+        # Verify post_invoke was called with args, result, and context
+        call_args = mock_pm.hook_post_invoke.call_args
+        assert call_args[1]["args"] == ["test", "args"]
+        assert call_args[1]["result"] == mock_result
+        assert call_args[1]["context"] is not None
+        assert call_args[1]["context"].result == mock_result  # context should include result
 
-    def test_invoke_hook_execution_order(
-        self, reset_plugin_manager, mocker, mock_cli_group
-    ):
+    def test_invoke_hook_execution_order(self, reset_plugin_manager, mocker, mock_cli_group):
         """Test that hooks execute in correct order: pre -> dbt -> post."""
         mocker.patch("xbt.xbt_runner.cli", mock_cli_group)
 
@@ -211,25 +196,21 @@ class TestInvokeMethod:
         # Mock plugin manager
         mock_pm = Mock()
         mock_pm.hook_register_callbacks.return_value = []
-        mock_pm.hook_pre_invoke.side_effect = lambda args: (
+        mock_pm.hook_pre_invoke.side_effect = lambda args, context=None: (
             call_order.append("pre"),
             args,
         )[1]
-        mock_pm.hook_post_invoke.side_effect = lambda args, result: call_order.append(
+        mock_pm.hook_post_invoke.side_effect = lambda args, result, context=None: call_order.append(
             "post"
         )
-        mocker.patch(
-            "xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm
-        )
+        mocker.patch("xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm)
 
         # Mock parent invoke
         mock_result = Mock()
         mock_result.success = True
         mocker.patch(
             "dbt.cli.main.dbtRunner.invoke",
-            side_effect=lambda args, **kwargs: (call_order.append("dbt"), mock_result)[
-                1
-            ],
+            side_effect=lambda args, **kwargs: (call_order.append("dbt"), mock_result)[1],
         )
 
         runner = xbtRunner()
@@ -246,9 +227,7 @@ class TestInvokeMethod:
         mock_pm = Mock()
         mock_pm.hook_register_callbacks.return_value = []
         mock_pm.hook_pre_invoke.return_value = ["test"]
-        mocker.patch(
-            "xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm
-        )
+        mocker.patch("xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm)
 
         # Mock parent invoke
         mock_result = Mock()
@@ -271,15 +250,11 @@ class TestInvokeMethod:
         mock_pm = Mock()
         mock_pm.hook_register_callbacks.return_value = []
         mock_pm.hook_pre_invoke.return_value = ["test"]
-        mocker.patch(
-            "xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm
-        )
+        mocker.patch("xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm)
 
         # Mock parent invoke
         mock_result = Mock()
-        mock_super_invoke = mocker.patch(
-            "dbt.cli.main.dbtRunner.invoke", return_value=mock_result
-        )
+        mock_super_invoke = mocker.patch("dbt.cli.main.dbtRunner.invoke", return_value=mock_result)
 
         runner = xbtRunner()
         runner.invoke(["test"], custom_kwarg="value")
@@ -291,9 +266,7 @@ class TestInvokeMethod:
 class TestArgsModification:
     """Test argument modification through pre_invoke hook."""
 
-    def test_args_modification_passed_to_dbt(
-        self, reset_plugin_manager, mocker, mock_cli_group
-    ):
+    def test_args_modification_passed_to_dbt(self, reset_plugin_manager, mocker, mock_cli_group):
         """Test that modified args from pre_invoke are passed to dbt."""
         mocker.patch("xbt.xbt_runner.cli", mock_cli_group)
 
@@ -301,15 +274,11 @@ class TestArgsModification:
         mock_pm = Mock()
         mock_pm.hook_register_callbacks.return_value = []
         mock_pm.hook_pre_invoke.return_value = ["run", "--profile", "dev"]
-        mocker.patch(
-            "xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm
-        )
+        mocker.patch("xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm)
 
         # Mock parent invoke
         mock_result = Mock()
-        mock_super_invoke = mocker.patch(
-            "dbt.cli.main.dbtRunner.invoke", return_value=mock_result
-        )
+        mock_super_invoke = mocker.patch("dbt.cli.main.dbtRunner.invoke", return_value=mock_result)
 
         runner = xbtRunner()
         runner.invoke(["run"])
@@ -327,15 +296,11 @@ class TestArgsModification:
         mock_pm = Mock()
         mock_pm.hook_register_callbacks.return_value = []
         mock_pm.hook_pre_invoke.return_value = ["test", "cmd"]
-        mocker.patch(
-            "xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm
-        )
+        mocker.patch("xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm)
 
         # Mock parent invoke
         mock_result = Mock()
-        mock_super_invoke = mocker.patch(
-            "dbt.cli.main.dbtRunner.invoke", return_value=mock_result
-        )
+        mock_super_invoke = mocker.patch("dbt.cli.main.dbtRunner.invoke", return_value=mock_result)
 
         runner = xbtRunner()
         runner.invoke(["test", "cmd"])
@@ -352,9 +317,7 @@ class TestManifestParameter:
         mocker.patch("xbt.xbt_runner.cli", mock_cli_group)
 
         # Mock dbtRunner.__init__
-        mock_super_init = mocker.patch(
-            "dbt.cli.main.dbtRunner.__init__", return_value=None
-        )
+        mock_super_init = mocker.patch("dbt.cli.main.dbtRunner.__init__", return_value=None)
 
         mock_manifest = Mock()
         xbtRunner(manifest=mock_manifest)

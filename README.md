@@ -4,7 +4,9 @@
 
 ## Features
 
-- 🔌 **Plugin System** – Register custom logic to run before/after any dbt command
+- 🔌 **Plugin System** – Register custom logic with minimal boilerplate (v0.2+: ~70% less code!)
+- 🎯 **Structured Context** – Pre-extracted command, project directory, and execution info
+- 🔑 **Command Filtering** – Declarative `@hookimpl(run_for_commands={...})` instead of manual branching
 - 📋 **Custom Commands** – Add new commands to the CLI context
 - 🎯 **Transparent Wrapper** – Output and exit codes match dbt exactly
 - 🔗 **dbtRunner Integration** – Direct access to dbt's event system via callbacks
@@ -37,16 +39,20 @@ All standard dbt commands work exactly as they would with `dbt`, including argum
 
 ## Plugin System
 
-xbt uses [pluggy](https://pluggy.readthedocs.io/) to provide a simple yet powerful plugin architecture. Plugins can extend xbt by implementing four hooks:
+xbt features a plugin system that minimizes boilerplate by providing:
 
-1. **`xbt_register_commands`** – Add custom commands to the CLI
-2. **`xbt_register_callbacks`** – Receive real-time dbt events  
-3. **`xbt_pre_invoke`** – Transform command-line arguments
-4. **`xbt_post_invoke`** – React to dbt results after execution
+- **`XbtContext`** – Pre-extracted command, project directory, and execution info passed to all hooks
+- **Command Filtering** – Declarative `@hookimpl(run_for_commands={...})` decorators instead of manual branching
+- **Shared Utilities** – Common functions in `xbt.plugins` module for CLI parsing, directory discovery, and formatting
+- **Plugin Configuration** – YAML-based `PluginConfig` for structured plugin settings
 
-Plugins are discovered automatically from:
+### Automatic Plugin Discovery
+
+xbt discovers plugins from:
 - Built-in plugins in `src/xbt/_plugins/`
 - External packages via entry points (group: `xbt`)
+
+Plugins are auto-loaded and immediately available—no registration code needed.
 
 ### Plugin Configuration
 
@@ -112,71 +118,14 @@ xbt plugin list    # Show all loaded plugins with versions
 
 ### Plugin Development
 
-#### Create a Simple Plugin
+See [PLUGIN_DEVELOPMENT.md](PLUGIN_DEVELOPMENT.md) for comprehensive plugin development documentation, including:
 
-1. Create a Python file implementing one or more hooks:
-
-```python
-# my_xbt_plugin/plugin.py
-from xbt.hookspecs import hookimpl
-
-@hookimpl
-def xbt_post_invoke(args, result):
-    """React to dbt command results."""
-    if result.success:
-        print("✓ Command succeeded!")
-    elif result.exception:
-        print(f"✗ Error: {result.exception}")
-
-@hookimpl
-def xbt_pre_invoke(args):
-    """Modify arguments before dbt processes them."""
-    if "--profile" not in args and "--select" in args:
-        args = ["--profile", "dev"] + args
-    return args
-```
-
-2. Register your plugin in your package's `pyproject.toml`:
-
-```toml
-[project.entry-points.xbt]
-my_plugin = "my_xbt_plugin.plugin"
-```
-
-3. Install your package:
-
-```bash
-pip install my_xbt_plugin
-```
-
-Your plugin will be auto-discovered and loaded when xbt runs!
-
-#### Hook Reference
-
-**`xbt_register_commands(cli_group)`**
-- Called during xbtRunner initialization
-- Access the Click CLI group to add custom commands/options
-- Use for extending xbt with new subcommands
-
-**`xbt_register_callbacks()`**
-- Should return `List[Callable[[EventMsg], None]]` or None
-- Each callback receives EventMsg objects in real-time as dbt executes
-- Use for monitoring, logging, or event-driven behavior
-
-**`xbt_pre_invoke(args)`**
-- Receives list of command-line arguments
-- Should return modified list or None (to keep unchanged)
-- All plugins' args modifications are chained sequentially
-- Use for argument validation, injection, or transformation
-
-**`xbt_post_invoke(args, result)`**
-- Called after dbt command completes
-- `result` has attributes: `success` (bool), `exception` (Optional[Exception])
-- Use for post-processing, custom reporting, error handling
-
-#### Example: Built-in Plugin
-
-See [src/xbt/_plugins/example_plugin.py](src/xbt/_plugins/example_plugin.py) for a reference implementation showing all four hooks.
+- Quick start guide with example plugins
+- Complete XbtContext reference
+- All hook specifications with detailed examples
+- Shared utilities for common tasks
+- Command filtering with decorators
+- Real-world plugin examples from the built-in plugins
 
 ## Development
 
@@ -191,7 +140,7 @@ Clone the repository and install dependencies:
 
 ```bash
 git clone <repository-url>
-cd xbt2
+cd xbt-core
 uv sync
 ```
 
@@ -204,34 +153,65 @@ uv run pytest
 ### Type Checking
 
 ```bash
-uv run ty
+uv run ty check
 ```
 
 ### Linting and Formatting
 
 ```bash
 # Check formatting and linting
-uv run ruff check src/xbt
+uv run ruff check .
+uv run ruff format --check .
 
 # Auto-fix issues
-uv run ruff format src/xbt
-uv run ruff check --fix src/xbt
+uv run ruff format .
+uv run ruff check --fix .
+```
+
+### Full Validation
+
+Run all checks that are required for a PR:
+
+```bash
+uv run pytest && uv run ruff check . && uv run ruff format --check . && uv run ty check
 ```
 
 ### Project Structure
 
 ```
-xbt2/
+xbt-core/
 ├── src/xbt/
-│   ├── main.py              # CLI entry point
-│   ├── xbt_runner.py        # Core xbtRunner class
-│   ├── hookspecs.py         # Hook specifications for plugins
-│   ├── plugin_manager.py    # Plugin discovery and management
-│   ├── _plugins/
+│   ├── __init__.py              # Public API exports
+│   ├── main.py                  # CLI entry point
+│   ├── xbt_runner.py            # Core xbtRunner class
+│   ├── hookspecs.py             # Hook specifications for plugins
+│   ├── plugin_manager.py        # Plugin discovery and management
+│   ├── plugins/                 # Public plugin development API (v0.2+)
+│   │   ├── __init__.py          # Exports: XbtContext, hookimpl, utilities
+│   │   ├── context.py           # XbtContext dataclass
+│   │   ├── filter.py            # HookFilter for command filtering
+│   │   ├── utils.py             # Shared plugin utilities
+│   │   └── config.py            # PluginConfig base class
+│   ├── _plugins/                # Built-in plugins
 │   │   ├── __init__.py
-│   │   └── example_plugin.py    # Reference plugin implementation
-├── pyproject.toml           # Project configuration
-└── README.md
+│   │   ├── example_plugin.py    # Reference implementation
+│   │   └── plugin_command.py    # CLI commands plugin
+├── tests/
+│   ├── unit/
+│   │   ├── plugins/             # Plugin system tests (v0.2+)
+│   │   │   ├── test_context.py
+│   │   │   ├── test_filter.py
+│   │   │   └── test_utils.py
+│   │   ├── test_hookspecs.py
+│   │   ├── test_plugin_manager.py
+│   │   ├── test_xbt_runner.py
+│   │   └── test_main.py
+│   ├── integration/
+│   │   ├── test_dbt_duckdb.py
+│   │   └── test_plugin_loading.py
+│   └── fixtures/
+├── pyproject.toml               # Project configuration
+├── README.md                    # This file
 ```
 
 ## Acknowledgements
@@ -261,10 +241,8 @@ changie batch patch
 changie merge
 ```
 
-Please also run tests and linters before opening a PR:
+Before opening a PR, please run all validations:
 
 ```bash
-uv run ruff check .
-uv run ty check
-uv run pytest
+uv run pytest && uv run ruff check . && uv run ruff format --check . && uv run ty check
 ```
