@@ -7,10 +7,10 @@ This guide covers how to develop plugins for xbt using the v0.2+ plugin system.
 ### Create a Simple Plugin
 
 ```python
-from xbt.plugins import hookimpl, XbtContext
+from xbt.plugins import PostInvokeContext, PreInvokeContext, hookimpl
 
 @hookimpl(run_for_commands={"run", "test", "build"})
-def xbt_post_invoke(context: XbtContext) -> None:
+def xbt_post_invoke(context: PostInvokeContext) -> None:
     """React to dbt run/test/build results."""
     if context.result.success:
         print(f"✓ {context.command} succeeded!")
@@ -18,7 +18,7 @@ def xbt_post_invoke(context: XbtContext) -> None:
         print(f"✗ {context.command} failed")
 
 @hookimpl
-def xbt_pre_invoke(context: XbtContext) -> list[str] | None:
+def xbt_pre_invoke(context: PreInvokeContext) -> list[str] | None:
     """Inject flags for dbt runs."""
     if context.command in {"run", "test"} and context.has_project:
         if "--profile" not in context.args:
@@ -35,9 +35,22 @@ my_plugin = "my_xbt_plugin.plugin"
 
 That's it! Your plugin is auto-discovered and ready to use.
 
-## XbtContext Reference
+## Hook Context Reference
 
-The `XbtContext` object passed to hooks provides:
+Hooks receive one of three context types with only the fields populated for
+that hook.
+
+### InitContext
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `project_dir` | `Optional[Path]` | Resolved dbt project directory (if found) |
+| `workspace_root` | `Path` | Repository/workspace root directory |
+| `registered_dbt_commands` | `set[str]` | Set of dbt's built-in commands (captured at runtime) |
+| `registered_plugin_commands` | `set[str]` | Set of commands registered by plugins |
+| `registered_builtin_commands` | `set[str]` | Set of commands registered by built-in plugins |
+
+### PreInvokeContext
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
@@ -45,17 +58,63 @@ The `XbtContext` object passed to hooks provides:
 | `args` | `list[str]` | Original CLI arguments |
 | `project_dir` | `Optional[Path]` | Resolved dbt project directory (if found) |
 | `workspace_root` | `Path` | Repository/workspace root directory |
-| `plugin_name` | `str` | Name of the current plugin |
-| `result` | `Optional[Any]` | dbt execution result (post-invoke hooks only) |
+| `registered_dbt_commands` | `set[str]` | Set of dbt's built-in commands (captured at runtime) |
+| `registered_plugin_commands` | `set[str]` | Set of commands registered by plugins |
+| `registered_builtin_commands` | `set[str]` | Set of commands registered by built-in plugins |
+
+### PostInvokeContext
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `command` | `Optional[str]` | Extracted dbt command (e.g., "run", "test") |
+| `args` | `list[str]` | Original CLI arguments |
+| `project_dir` | `Optional[Path]` | Resolved dbt project directory (if found) |
+| `workspace_root` | `Path` | Repository/workspace root directory |
+| `registered_dbt_commands` | `set[str]` | Set of dbt's built-in commands (captured at runtime) |
+| `registered_plugin_commands` | `set[str]` | Set of commands registered by plugins |
+| `registered_builtin_commands` | `set[str]` | Set of commands registered by built-in plugins |
+| `result` | `Any` | dbt execution result (post-invoke hooks only) |
 
 ### Context Properties
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `is_plugin_command` | `bool` | True if "plugin" or "plugins" command |
-| `is_dbt_command` | `bool` | True if command is a standard dbt command (run, test, compile, etc.) |
-| `is_xbt_command` | `bool` | True if command is an xbt or plugin-added command (not dbt, not plugin mgmt) |
+| `is_builtin_command` | `bool` | True if command was registered by a built-in plugin |
+| `is_dbt_command` | `bool` | True if command is a standard dbt command (dynamic at runtime). |
+| `is_xbt_command` | `bool` | True if command is an xbt or plugin-added command (dynamic at runtime). |
 | `has_project` | `bool` | True if valid dbt project directory exists |
+
+`is_builtin_command`, `is_dbt_command`, and `is_xbt_command` are available on
+PreInvokeContext and PostInvokeContext. `has_project` is available on all
+contexts.
+
+Built-in commands come from plugins discovered in [src/xbt/_plugins/](src/xbt/_plugins/).
+
+### Dynamic Command Classification
+
+The `is_dbt_command` and `is_xbt_command` properties are **dynamic** – they use the commands registered at runtime:
+
+```python
+from xbt.plugins import PreInvokeContext, hookimpl
+
+@hookimpl
+def xbt_pre_invoke(context: PreInvokeContext) -> list[str] | None:
+    """Handles any dbt version without code changes."""
+    
+    # These automatically detect the actual dbt commands
+    if context.is_dbt_command:
+        print(f"dbt command: {context.command}")
+    
+    elif context.is_xbt_command:
+        print(f"xbt/plugin command: {context.command}")
+    
+    return None
+```
+
+**Benefits:**
+- Works with any dbt version (no hardcoded command list to maintain)
+- Automatically detects plugin-added commands
+- Plugins can distinguish between dbt commands and xbt/plugin commands at runtime
 
 ## Hook Reference
 
@@ -89,15 +148,15 @@ def xbt_register_callbacks(context=None):
     return [my_callback]
 ```
 
-### `xbt_pre_invoke(context: XbtContext) -> Optional[List[str]]`
+### `xbt_pre_invoke(context: PreInvokeContext) -> Optional[List[str]]`
 
 Modify command-line arguments before dbt execution. Use `@hookimpl` parameters for command filtering:
 
 ```python
-from xbt.plugins import hookimpl, XbtContext
+from xbt.plugins import PreInvokeContext, hookimpl
 
 @hookimpl(run_for_commands={"run", "test"})
-def xbt_pre_invoke(context: XbtContext) -> list[str] | None:
+def xbt_pre_invoke(context: PreInvokeContext) -> list[str] | None:
     """Only runs for run and test commands."""
     if not context.has_project:
         return None  # No project, keep original args
@@ -112,15 +171,15 @@ def xbt_pre_invoke(context: XbtContext) -> list[str] | None:
 - Use `context.command` instead of parsing args manually
 - Use decorator parameters for filtering instead of manual checks
 
-### `xbt_post_invoke(context: XbtContext) -> None`
+### `xbt_post_invoke(context: PostInvokeContext) -> None`
 
 React to dbt results after execution. Use `@hookimpl` parameters to skip certain commands:
 
 ```python
-from xbt.plugins import hookimpl, XbtContext
+from xbt.plugins import PostInvokeContext, hookimpl
 
 @hookimpl(skip_for_commands={"plugin", "plugins"})
-def xbt_post_invoke(context: XbtContext) -> None:
+def xbt_post_invoke(context: PostInvokeContext) -> None:
     """Skip for plugin management commands, run for all others."""
     if not context.has_project:
         return
@@ -205,18 +264,18 @@ from xbt.plugins import (
 No manual branching needed! Use decorator parameters:
 
 ```python
-from xbt.plugins import hookimpl, XbtContext
+from xbt.plugins import PostInvokeContext, PreInvokeContext, hookimpl
 
 # Only run for specific commands
 @hookimpl(run_for_commands={"run", "test", "build"})
-def xbt_post_invoke(context: XbtContext) -> None:
+def xbt_post_invoke(context: PostInvokeContext) -> None:
     # This hook only executes for run, test, build
     # xbt automatically skips for other commands
     pass
 
 # Skip for specific commands
 @hookimpl(skip_for_commands={"plugin", "plugins"})
-def xbt_pre_invoke(context: XbtContext) -> list[str] | None:
+def xbt_pre_invoke(context: PreInvokeContext) -> list[str] | None:
     # This hook runs for all commands except plugin management
     pass
 
@@ -257,7 +316,7 @@ def xbt_pre_invoke(context):
     # Logic here
 ```
 
-### Leverage XbtContext
+### Leverage Hook Contexts
 
 Use the pre-extracted context instead of manual parsing:
 
@@ -282,12 +341,12 @@ while current != current.parent:
 Use the command classification properties to determine how to handle different command types:
 
 ```python
-from xbt.plugins import hookimpl, XbtContext
+from xbt.plugins import PostInvokeContext, hookimpl
 
 @hookimpl
-def xbt_post_invoke(context: XbtContext) -> None:
-    # Skip plugin management commands
-    if context.is_plugin_command:
+def xbt_post_invoke(context: PostInvokeContext) -> None:
+    # Skip built-in commands
+    if context.is_builtin_command:
         return
     
     # Handle dbt commands specially

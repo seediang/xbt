@@ -7,13 +7,20 @@ from typing import TYPE_CHECKING, Any, Callable, List, Optional
 import pluggy
 
 if TYPE_CHECKING:
-    from xbt.plugins import PluginConfig, XbtContext
+    from xbt.plugins import (
+        InitContext,
+        PluginConfig,
+        PostInvokeContext,
+        PreInvokeContext,
+    )
 
 hookspec = pluggy.HookspecMarker("xbt")
 
 
 @hookspec
-def xbt_register_commands(cli_group: Any, context: Optional[XbtContext] = None) -> None:
+def xbt_register_commands(
+    cli_group: Any, context: Optional[InitContext] = None
+) -> None:
     """
     Register custom commands and options with the Click CLI group.
 
@@ -23,9 +30,7 @@ def xbt_register_commands(cli_group: Any, context: Optional[XbtContext] = None) 
 
     Args:
         cli_group: The Click Group object for the xbt CLI.
-        context: XbtContext with execution information (new in v0.2).
-            Provides dbt command, project directory, etc. The cmd field may
-            not be populated during initialization.
+        context: InitContext with execution information (new in v0.2).
 
     Example:
         from xbt.plugins import hookimpl
@@ -40,7 +45,7 @@ def xbt_register_commands(cli_group: Any, context: Optional[XbtContext] = None) 
 
 @hookspec
 def xbt_register_callbacks(
-    context: Optional[XbtContext] = None,
+    context: Optional[InitContext] = None,
 ) -> Optional[List[Callable[[Any], None]]]:
     """
     Register callbacks to receive dbt events.
@@ -50,9 +55,7 @@ def xbt_register_callbacks(
     as dbt executes.
 
     Args:
-        context: XbtContext with execution information (new in v0.2).
-            Note: context fields may be None during initialization
-            as this hook is called before argument processing.
+        context: InitContext with execution information (new in v0.2).
 
     Returns:
         Optional[List[Callable[[EventMsg], None]]]: List of callback functions.
@@ -71,7 +74,7 @@ def xbt_register_callbacks(
 
 @hookspec
 def xbt_pre_invoke(
-    args: List[str], context: Optional[XbtContext] = None
+    args: List[str], context: Optional[PreInvokeContext] = None
 ) -> Optional[List[str]]:
     """
     Modify command-line arguments before dbt processing.
@@ -82,7 +85,7 @@ def xbt_pre_invoke(
 
     Args:
         args: List of command-line arguments.
-        context: XbtContext with execution information (new in v0.2).
+        context: PreInvokeContext with execution information (new in v0.2).
             Provides extracted command, resolved project directory, etc.
             Plugins should use context for command filtering and directory info.
 
@@ -90,10 +93,10 @@ def xbt_pre_invoke(
         Optional[List[str]]: Modified arguments. If None, args are unchanged.
 
     Example:
-        from xbt.plugins import hookimpl, XbtContext
+        from xbt.plugins import PreInvokeContext, hookimpl
 
         @hookimpl(run_for_commands={"run", "test", "build"})
-        def xbt_pre_invoke(args, context=None):
+        def xbt_pre_invoke(args, context: PreInvokeContext | None = None):
             if not context or not context.has_project:
                 return None
             # Inject a custom flag for dbt runs
@@ -103,7 +106,7 @@ def xbt_pre_invoke(
 
 @hookspec
 def xbt_post_invoke(
-    args: List[str], result: Any, context: Optional[XbtContext] = None
+    args: List[str], result: Any, context: Optional[PostInvokeContext] = None
 ) -> None:
     """
     React to dbt invocation results.
@@ -115,18 +118,18 @@ def xbt_post_invoke(
         args: The command-line arguments that were passed to dbt.
         result: The xbtRunnerResult object from dbt invocation.
             Has attributes: success (bool), exception (Optional[Exception])
-        context: XbtContext with execution information (new in v0.2).
+        context: PostInvokeContext with execution information (new in v0.2).
             Provides extracted command, project directory, result status, etc.
             Plugins should prefer using context over parsing args directly.
 
     Example:
-        from xbt.plugins import hookimpl, XbtContext
+        from xbt.plugins import PostInvokeContext, hookimpl
 
         @hookimpl(run_for_commands={"run", "test"})
-        def xbt_post_invoke(args, result, context=None):
+        def xbt_post_invoke(args, result, context: PostInvokeContext | None = None):
             if not context:
                 return
-            if context.result and context.result.success:
+            if context.result.success:
                 print(f"✓ {context.command} completed successfully")
             else:
                 print(f"✗ {context.command} failed")

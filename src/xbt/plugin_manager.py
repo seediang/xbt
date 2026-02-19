@@ -2,15 +2,19 @@
 
 import importlib.metadata
 import importlib.util
+import inspect
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 import pluggy
 import yaml
 
 from . import hookspecs
+
+if TYPE_CHECKING:
+    from xbt.plugins import InitContext, PostInvokeContext, PreInvokeContext
 
 logger = logging.getLogger(__name__)
 
@@ -326,27 +330,96 @@ class XbtPluginManager:
         # No filter means always execute
         return True
 
+    def _get_plugin_source_map(self) -> Dict[str, str]:
+        """Return a mapping of plugin name to source type."""
+        return {
+            entry.get("name", ""): entry.get("source", "unknown")
+            for entry in self._plugin_registry
+        }
+
+    def _call_hook_impl(self, hook_impl: Any, **kwargs: Any) -> None:
+        """Invoke a hook implementation with supported keyword arguments."""
+        func = hook_impl.function
+        signature = inspect.signature(func)
+        if any(
+            param.kind == inspect.Parameter.VAR_KEYWORD
+            for param in signature.parameters.values()
+        ):
+            func(**kwargs)
+            return
+
+        call_kwargs = {
+            name: value
+            for name, value in kwargs.items()
+            if name in signature.parameters
+        }
+        func(**call_kwargs)
+
+    def _execute_register_commands(
+        self,
+        cli_group: Any,
+        context: Optional[Any],
+        *,
+        track_builtin: bool,
+    ) -> Set[str]:
+        builtin_commands: Set[str] = set()
+        source_map = self._get_plugin_source_map() if track_builtin else {}
+
+        for hook_impl in self.pm.hook.xbt_register_commands.get_hookimpls():
+            before = set(cli_group.commands.keys())
+            try:
+                self._call_hook_impl(hook_impl, cli_group=cli_group, context=context)
+            except Exception as e:
+                logger.warning(f"Error in xbt_register_commands hook: {e}")
+                continue
+
+            if track_builtin:
+                plugin_name = self.pm.get_name(hook_impl.plugin)
+                if not plugin_name:
+                    continue
+                if source_map.get(plugin_name) == "builtin":
+                    added = set(cli_group.commands.keys()) - before
+                    builtin_commands.update(added)
+
+        return builtin_commands
+
     def hook_register_commands(
-        self, cli_group: Any, context: Optional[Any] = None
+        self, cli_group: Any, context: Optional["InitContext"] = None
     ) -> None:
         """
         Call xbt_register_commands hook for all plugins.
 
         Args:
             cli_group: The Click Group object to register commands with.
-            context: XbtContext with execution information.
+            context: InitContext with execution information.
         """
-        try:
-            self.pm.hook.xbt_register_commands(cli_group=cli_group, context=context)
-        except Exception as e:
-            logger.warning(f"Error in xbt_register_commands hooks: {e}")
+        self._execute_register_commands(
+            cli_group=cli_group, context=context, track_builtin=False
+        )
 
-    def hook_register_callbacks(self, context: Optional[Any] = None) -> List:
+    def hook_register_commands_with_tracking(
+        self, cli_group: Any, context: Optional["InitContext"] = None
+    ) -> Set[str]:
+        """
+        Call xbt_register_commands hooks and return built-in command names.
+
+        Args:
+            cli_group: The Click Group object to register commands with.
+            context: InitContext with execution information.
+
+        Returns:
+            Set of commands added by built-in plugins.
+        """
+        return self._execute_register_commands(
+            cli_group=cli_group, context=context, track_builtin=True
+        )
+
+    def hook_register_callbacks(self, context: Optional["InitContext"] = None) -> List:
         """
         Call xbt_register_callbacks hook for all plugins.
 
         Args:
-            context: XbtContext with execution information.
+            context: InitContext with execution information.
 
         Returns:
             Flattened list of all callbacks from all plugins.
@@ -365,7 +438,7 @@ class XbtPluginManager:
         return callbacks
 
     def hook_pre_invoke(
-        self, args: List[str], context: Optional[Any] = None
+        self, args: List[str], context: Optional["PreInvokeContext"] = None
     ) -> List[str]:
         """
         Call xbt_pre_invoke hook for all plugins, chaining modifications.
@@ -376,7 +449,7 @@ class XbtPluginManager:
 
         Args:
             args: Original command-line arguments.
-            context: XbtContext with execution information.
+            context: PreInvokeContext with execution information.
 
         Returns:
             Modified arguments after all plugins have processed them.
@@ -392,7 +465,10 @@ class XbtPluginManager:
         return args
 
     def hook_post_invoke(
-        self, args: List[str], result: Any, context: Optional[Any] = None
+        self,
+        args: List[str],
+        result: Any,
+        context: Optional["PostInvokeContext"] = None,
     ) -> None:
         """
         Call xbt_post_invoke hook for all plugins.
@@ -400,7 +476,7 @@ class XbtPluginManager:
         Args:
             args: The arguments that were passed to dbt.
             result: The xbtRunnerResult from dbt invocation.
-            context: XbtContext with execution information.
+            context: PostInvokeContext with execution information.
         """
         try:
             self.pm.hook.xbt_post_invoke(args=args, result=result, context=context)

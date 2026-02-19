@@ -3,7 +3,7 @@
 from pathlib import Path
 from unittest.mock import Mock
 
-from xbt.plugin_manager import XbtPluginManager
+from xbt.plugin_manager import XbtPluginManager, hookimpl
 
 
 class TestXbtPluginManagerSingleton:
@@ -447,17 +447,26 @@ class TestHookInvocation:
     """Test hook method invocations."""
 
     def test_hook_register_commands(self, reset_plugin_manager, mocker, mock_cli_group):
-        """Test hook_register_commands delegates to pluggy."""
+        """Test hook_register_commands invokes hook implementations."""
         mocker.patch("pathlib.Path.cwd", return_value=Path("/tmp"))
         mocker.patch.object(Path, "glob", return_value=[])
         mocker.patch("importlib.metadata.entry_points", return_value=[])
 
         manager = XbtPluginManager()
-        mock_hook = mocker.patch.object(manager.pm.hook, "xbt_register_commands")
+        mock_cli_group.commands = {}
+
+        calls = []
+
+        class DummyPlugin:
+            @hookimpl
+            def xbt_register_commands(self, cli_group, context=None):
+                calls.append((cli_group, context))
+
+        manager.pm.register(DummyPlugin(), name="dummy_plugin")
 
         manager.hook_register_commands(cli_group=mock_cli_group, context=None)
 
-        mock_hook.assert_called_once_with(cli_group=mock_cli_group, context=None)
+        assert calls == [(mock_cli_group, None)]
 
     def test_hook_register_callbacks_flattens_lists(self, reset_plugin_manager, mocker):
         """Test that hook_register_callbacks flattens callback lists."""

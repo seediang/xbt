@@ -2,18 +2,18 @@
 
 This package provides the public API for developing xbt plugins:
 
-- XbtContext: Structured context passed to all hooks (extracted dbt command,
-  project directory, etc.)
+- InitContext/PreInvokeContext/PostInvokeContext: Hook-specific contexts
+    with only the fields populated for that hook.
 - hookimpl: Enhanced hook implementation marker with command filtering support
 - PluginConfig: Base class for plugin configuration with YAML loading
 - Various utilities: get_dbt_command, find_workspace_root, format_status_message, etc.
 
 Example usage:
 
-    from xbt.plugins import XbtContext, hookimpl, PluginConfig
+    from xbt.plugins import PostInvokeContext, hookimpl, PluginConfig
 
     @hookimpl(run_for_commands={"run", "test", "build"})
-    def xbt_post_invoke(context: XbtContext) -> None:
+    def xbt_post_invoke(context: PostInvokeContext) -> None:
         if not context.has_project:
             return
         # Do work with context.command, context.project_dir, etc.
@@ -34,7 +34,7 @@ from typing import TYPE_CHECKING, Callable, Optional, Set
 import pluggy
 
 from xbt.plugins.config import PluginConfig
-from xbt.plugins.context import XbtContext
+from xbt.plugins.context import InitContext, PostInvokeContext, PreInvokeContext
 from xbt.plugins.filter import HookFilter
 from xbt.plugins.utils import (
     emit_status,
@@ -77,17 +77,17 @@ def hookimpl(
 
     Examples:
         >>> @hookimpl(run_for_commands={"run", "test", "build"})
-        ... def xbt_post_invoke(context: XbtContext) -> None:
+        ... def xbt_post_invoke(context: PostInvokeContext) -> None:
         ...     # Only called for run, test, build
         ...     pass
 
         >>> @hookimpl(skip_for_commands={"plugin", "plugins"})
-        ... def xbt_pre_invoke(context: XbtContext) -> Optional[list]:
+        ... def xbt_pre_invoke(context: PreInvokeContext) -> Optional[list]:
         ...     # Called for all except plugin/plugins commands
         ...     return None
 
         >>> @hookimpl(tryfirst=True)
-        ... def xbt_register_commands(context: XbtContext) -> None:
+        ... def xbt_register_commands(cli_group, context: InitContext) -> None:
         ...     # Regular behavior, runs first
         ...     pass
     """
@@ -117,7 +117,9 @@ def hookimpl(
 
 __all__ = [
     # Main classes
-    "XbtContext",
+    "InitContext",
+    "PreInvokeContext",
+    "PostInvokeContext",
     "PluginConfig",
     "hookimpl",
     # Utilities

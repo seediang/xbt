@@ -44,6 +44,7 @@ class TestXbtRunnerInitialization:
 
         # Mock plugin manager to return no callbacks
         mock_pm = Mock()
+        mock_pm.hook_register_commands_with_tracking.return_value = set()
         mock_pm.hook_register_callbacks.return_value = []
         mocker.patch(
             "xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm
@@ -68,6 +69,7 @@ class TestXbtRunnerInitialization:
 
         # Mock plugin manager
         mock_pm = Mock()
+        mock_pm.hook_register_commands_with_tracking.return_value = set()
         mock_pm.hook_register_callbacks.return_value = []
         mocker.patch(
             "xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm
@@ -76,9 +78,9 @@ class TestXbtRunnerInitialization:
         xbtRunner()
 
         # Verify hooks were called
-        # hook_register_commands should be called with cli_group and context
-        assert mock_pm.hook_register_commands.call_count == 1
-        call_args = mock_pm.hook_register_commands.call_args
+        # hook_register_commands_with_tracking should be called with cli_group and context
+        assert mock_pm.hook_register_commands_with_tracking.call_count == 1
+        call_args = mock_pm.hook_register_commands_with_tracking.call_args
         assert call_args[1]["cli_group"] == mock_cli_group
         assert call_args[1]["context"] is not None  # Should have context
 
@@ -99,6 +101,7 @@ class TestCallbackMerging:
         plugin_callback1 = Mock()
         plugin_callback2 = Mock()
         mock_pm = Mock()
+        mock_pm.hook_register_commands_with_tracking.return_value = set()
         mock_pm.hook_register_callbacks.return_value = [
             plugin_callback1,
             plugin_callback2,
@@ -130,6 +133,7 @@ class TestCallbackMerging:
         # Mock plugin manager to return plugin callbacks
         plugin_callback = Mock()
         mock_pm = Mock()
+        mock_pm.hook_register_commands_with_tracking.return_value = set()
         mock_pm.hook_register_callbacks.return_value = [plugin_callback]
         mocker.patch(
             "xbt.plugin_manager.XbtPluginManager.get_instance", return_value=mock_pm
@@ -158,6 +162,7 @@ class TestInvokeMethod:
 
         # Mock plugin manager
         mock_pm = Mock()
+        mock_pm.hook_register_commands_with_tracking.return_value = set()
         mock_pm.hook_register_callbacks.return_value = []
         mock_pm.hook_pre_invoke.return_value = ["modified", "args"]
         mocker.patch(
@@ -191,6 +196,7 @@ class TestInvokeMethod:
 
         # Mock plugin manager
         mock_pm = Mock()
+        mock_pm.hook_register_commands_with_tracking.return_value = set()
         mock_pm.hook_register_callbacks.return_value = []
         mock_pm.hook_pre_invoke.return_value = ["test", "args"]
         mocker.patch(
@@ -225,6 +231,7 @@ class TestInvokeMethod:
 
         # Mock plugin manager
         mock_pm = Mock()
+        mock_pm.hook_register_commands_with_tracking.return_value = set()
         mock_pm.hook_register_callbacks.return_value = []
         mock_pm.hook_pre_invoke.side_effect = lambda args, context=None: (
             call_order.append("pre"),
@@ -259,6 +266,7 @@ class TestInvokeMethod:
 
         # Mock plugin manager
         mock_pm = Mock()
+        mock_pm.hook_register_commands_with_tracking.return_value = set()
         mock_pm.hook_register_callbacks.return_value = []
         mock_pm.hook_pre_invoke.return_value = ["test"]
         mocker.patch(
@@ -284,6 +292,7 @@ class TestInvokeMethod:
 
         # Mock plugin manager
         mock_pm = Mock()
+        mock_pm.hook_register_commands_with_tracking.return_value = set()
         mock_pm.hook_register_callbacks.return_value = []
         mock_pm.hook_pre_invoke.return_value = ["test"]
         mocker.patch(
@@ -314,6 +323,7 @@ class TestArgsModification:
 
         # Mock plugin manager to modify args
         mock_pm = Mock()
+        mock_pm.hook_register_commands_with_tracking.return_value = set()
         mock_pm.hook_register_callbacks.return_value = []
         mock_pm.hook_pre_invoke.return_value = ["run", "--profile", "dev"]
         mocker.patch(
@@ -340,6 +350,7 @@ class TestArgsModification:
 
         # Mock plugin manager to return same args
         mock_pm = Mock()
+        mock_pm.hook_register_commands_with_tracking.return_value = set()
         mock_pm.hook_register_callbacks.return_value = []
         mock_pm.hook_pre_invoke.return_value = ["test", "cmd"]
         mocker.patch(

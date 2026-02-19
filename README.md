@@ -41,7 +41,7 @@ All standard dbt commands work exactly as they would with `dbt`, including argum
 
 xbt features a plugin system that minimizes boilerplate by providing:
 
-- **`XbtContext`** – Pre-extracted command, project directory, and execution info passed to all hooks
+- **Hook Contexts** – Pre-extracted command, project directory, and execution info per hook
 - **Command Filtering** – Declarative `@hookimpl(run_for_commands={...})` decorators instead of manual branching
 - **Shared Utilities** – Common functions in `xbt.plugins` module for CLI parsing, directory discovery, and formatting
 - **Plugin Configuration** – YAML-based `PluginConfig` for structured plugin settings
@@ -121,7 +121,7 @@ xbt plugin list    # Show all loaded plugins with versions
 See [PLUGIN_DEVELOPMENT.md](PLUGIN_DEVELOPMENT.md) for comprehensive plugin development documentation, including:
 
 - Quick start guide with example plugins
-- Complete XbtContext reference
+- Complete hook context reference
 - All hook specifications with detailed examples
 - Shared utilities for common tasks
 - Command filtering with decorators
@@ -187,8 +187,8 @@ xbt-core/
 │   ├── hookspecs.py             # Hook specifications for plugins
 │   ├── plugin_manager.py        # Plugin discovery and management
 │   ├── plugins/                 # Public plugin development API (v0.2+)
-│   │   ├── __init__.py          # Exports: XbtContext, hookimpl, utilities
-│   │   ├── context.py           # XbtContext dataclass
+│   │   ├── __init__.py          # Exports: hook contexts, hookimpl, utilities
+│   │   ├── context.py           # Hook context dataclasses
 │   │   ├── filter.py            # HookFilter for command filtering
 │   │   ├── utils.py             # Shared plugin utilities
 │   │   └── config.py            # PluginConfig base class

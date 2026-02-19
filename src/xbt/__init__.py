@@ -4,8 +4,10 @@ __version__ = "0.2.0"
 
 # Export public plugin API
 from xbt.plugins import (
+    InitContext,
     PluginConfig,
-    XbtContext,
+    PostInvokeContext,
+    PreInvokeContext,
     emit_status,
     find_dbt_project_dir,
     find_workspace_root,
@@ -16,7 +18,9 @@ from xbt.plugins import (
 )
 
 __all__ = [
-    "XbtContext",
+    "InitContext",
+    "PreInvokeContext",
+    "PostInvokeContext",
     "PluginConfig",
     "hookimpl",
     "get_dbt_command",
