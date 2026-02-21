@@ -145,7 +145,9 @@ class TestListPluginsCommand:
 
         mocker.patch("pathlib.Path.cwd", return_value=tmp_path)
         mocker.patch.object(Path, "glob", return_value=[])  # No built-ins
-        mocker.patch("importlib.metadata.entry_points", return_value=[mock_ep_a, mock_ep_b])
+        mocker.patch(
+            "importlib.metadata.entry_points", return_value=[mock_ep_a, mock_ep_b]
+        )
 
         # Register commands and execute list
         plugin_command.xbt_register_commands(mock_cli)

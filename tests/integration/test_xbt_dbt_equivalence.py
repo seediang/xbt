@@ -31,7 +31,9 @@ class TestXbtDbtEquivalence:
         return output.strip()
 
     @staticmethod
-    def run_command(cmd: list[str], cwd: Path, timeout: int = 60) -> tuple[int, str, str]:
+    def run_command(
+        cmd: list[str], cwd: Path, timeout: int = 60
+    ) -> tuple[int, str, str]:
         """Run a command and return returncode, stdout, stderr."""
         result = subprocess.run(
             cmd,
@@ -66,7 +68,9 @@ class TestXbtDbtEquivalence:
         xbt_normalized = self.normalize_output(xbt_stdout)
 
         # Check that both outputs contain key indicators (performance info written)
-        assert "Performance info" in xbt_normalized or "perf_info.json" in xbt_normalized
+        assert (
+            "Performance info" in xbt_normalized or "perf_info.json" in xbt_normalized
+        )
         # Both should create manifest.json
         assert (project_dir / "target" / "manifest.json").exists()
 
@@ -106,7 +110,12 @@ class TestXbtDbtEquivalence:
                 # Skip metadata lines (contain timestamps or common metadata phrases)
                 if any(
                     phrase in line
-                    for phrase in ["Running with", "Found ", "Registered adapter", "HH:MM:SS"]
+                    for phrase in [
+                        "Running with",
+                        "Found ",
+                        "Registered adapter",
+                        "HH:MM:SS",
+                    ]
                 ):
                     continue
                 # Skip ANSI color codes and get the actual content
@@ -249,7 +258,9 @@ class TestXbtDbtEquivalence:
 
         # Check that help text refers to 'xbt' not 'dbt'
         # The usage line should say "xbt" not "dbt"
-        usage_lines = [line for line in xbt_stdout.split("\n") if "usage:" in line.lower()]
+        usage_lines = [
+            line for line in xbt_stdout.split("\n") if "usage:" in line.lower()
+        ]
         if usage_lines:
             assert "xbt" in usage_lines[0].lower(), "Help usage should reference 'xbt'"
 
@@ -283,7 +294,9 @@ class TestXbtDbtEquivalence:
 
         # Test successful command
         dbt_returncode, _, _ = self.run_command(["dbt", "parse"], cwd=project_dir)
-        xbt_returncode, _, _ = self.run_command(["uv", "run", "xbt", "parse"], cwd=project_dir)
+        xbt_returncode, _, _ = self.run_command(
+            ["uv", "run", "xbt", "parse"], cwd=project_dir
+        )
         assert dbt_returncode == xbt_returncode == 0
 
         # Test invalid command (should both fail)
