@@ -55,15 +55,7 @@ jobs:
         run: uv sync
 
       - name: Run unit tests with coverage
-        run: uv run python -m pytest --cov=src/xbt --cov-report=xml --cov-report=term tests/unit/
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        if: matrix.os == 'ubuntu-latest'
-        with:
-          files: ./coverage.xml
-          flags: unit-tests
-          name: unit-tests-${{ matrix.os }}
+        run: uv run python -m pytest --cov=src/xbt --cov-report=term tests/unit/
 
   integration-tests:
     runs-on: ${{ matrix.os }}
@@ -85,12 +77,4 @@ jobs:
         run: uv sync
 
       - name: Run integration tests with coverage
-        run: uv run python -m pytest --cov=src/xbt --cov-report=xml --cov-report=term tests/integration/
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        if: matrix.os == 'ubuntu-latest'
-        with:
-          files: ./coverage.xml
-          flags: integration-tests
-          name: integration-tests-${{ matrix.os }}
+        run: uv run python -m pytest --cov=src/xbt --cov-report=term tests/integration/
