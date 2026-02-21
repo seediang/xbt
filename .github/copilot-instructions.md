@@ -12,6 +12,9 @@ Use uv for Python package management and execution.
 - Run formatting check with `uv run ruff format --check .` to verify code formatting.
 - Run type checking with `uv run ty check .` for static type analysis.
 - Auto-fix issues with `uv run ruff check --fix .` and `uv run ruff format .`.
+- Run unit tests with `uv run pytest tests/unit/` - fast tests that should pass first.
+- Run integration tests with `uv run pytest tests/integration/` - slower tests requiring dbt execution.
+- Run all tests with `uv run pytest` - runs both unit and integration tests.
 
 
 
@@ -45,10 +48,13 @@ This project is a thin wrapper around dbt that exposes a plugin system. The inst
 - **Developer workflows and commands**:
 this should commands should be executed to check the code is valid
 
-  - Run tests: `uv run pytest`
+  - Run unit tests: `uv run pytest tests/unit/` (fast, run first)
+  - Run integration tests: `uv run pytest tests/integration/` (slower, run after unit tests)
+  - Run all tests: `uv run pytest`
   - Type check: `uv run ty check`
   - Lint / format: `uv run ruff check .` and `uv run ruff format .`
   - Run xbt CLI locally: `uv run python -m xbt.main -- <dbt-args>` or install editable and run `xbt`.
+  - Full validation workflow: `uv run ruff check . && uv run ty check && uv run pytest tests/unit/ && uv run pytest tests/integration/`
 
 - **Patterns and conventions**:
   - Use type hints everywhere (project enforces `ty`).

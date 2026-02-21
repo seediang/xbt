@@ -7,7 +7,7 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  lint-and-test:
+  lint:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -35,5 +35,62 @@ jobs:
       - name: Type check with ty
         run: uvx ty check
 
-      - name: Run tests with coverage
-        run: uv run python -m pytest --cov=src/xbt tests/
+  unit-tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.12"]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run unit tests with coverage
+        run: uv run python -m pytest --cov=src/xbt --cov-report=xml --cov-report=term tests/unit/
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          files: ./coverage.xml
+          flags: unit-tests
+          name: unit-tests-${{ matrix.os }}
+
+  integration-tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.12"]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run integration tests with coverage
+        run: uv run python -m pytest --cov=src/xbt --cov-report=xml --cov-report=term tests/integration/
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          files: ./coverage.xml
+          flags: integration-tests
+          name: integration-tests-${{ matrix.os }}
