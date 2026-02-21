@@ -362,5 +362,4 @@ def xbt_post_invoke(context: PostInvokeContext) -> None:
 
 See [src/xbt/builtin_plugins/](src/xbt/builtin_plugins/) for built-in plugins:
 
-- [example_plugin.py](src/xbt/builtin_plugins/example_plugin.py) – Reference implementation with all hooks
-- [plugin_command.py](src/xbt/builtin_plugins/plugin_command.py) – Real-world plugin that adds the `xbt plugin list` command
+- [plugin_command.py](src/xbt/builtin_plugins/plugin_command.py) – Plugin that adds the `xbt plugin list` command

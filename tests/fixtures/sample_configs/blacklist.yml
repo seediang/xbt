@@ -1,3 +1,3 @@
 # Sample xbt.yml configuration with disabled plugins (blacklist mode)
 disabled_plugins:
-  - builtin_example_plugin
+  - builtin_plugin_command

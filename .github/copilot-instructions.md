@@ -28,11 +28,11 @@ This project is a thin wrapper around dbt that exposes a plugin system. The inst
   - [src/xbt/xbt_runner.py](src/xbt/xbt_runner.py) — subclass of `dbtRunner`; overwrites `cli.name` to `xbt` and calls plugin hooks around invocation.
   - [src/xbt/plugin_manager.py](src/xbt/plugin_manager.py) — discovery, loading, and lifecycle of plugins; built-in plugins are namespaced as `builtin_<module>`.
   - [src/xbt/hookspecs.py](src/xbt/hookspecs.py) — the four hook specs: `xbt_register_commands`, `xbt_register_callbacks`, `xbt_pre_invoke`, `xbt_post_invoke`.
-  - [src/xbt/_plugins/example_plugin.py](src/xbt/_plugins/example_plugin.py) — canonical reference implementation for the hooks.
+  - [src/xbt/builtin_plugins/plugin_command.py](src/xbt/builtin_plugins/plugin_command.py) — example builtin plugin implementation.
   - [src/xbt/main.py](src/xbt/main.py) — CLI entrypoint and exit-code mapping.
 
 - **Plugin discovery & naming**:
-  - Built-in plugins: scanned from `src/xbt/_plugins/*.py` and registered under names `builtin_<module>`.
+  - Built-in plugins: scanned from `src/xbt/builtin_plugins/*.py` and registered under names `builtin_<module>`.
   - External plugins: discovered via entry points group `xbt` in `pyproject.toml` / package metadata.
   - Config file: `xbt.yml` controls plugin enabling. If `enabled_plugins` is present -> whitelist mode (only those run). Otherwise uses `disabled_plugins` as a blacklist.
 
@@ -66,10 +66,10 @@ this should commands should be executed to check the code is valid
 
 - **When modifying plugin behavior**:
   - Update `hookspecs.py` first (if adding a hook), then update `plugin_manager.py` and `xbt_runner.py` to call the hook.
-  - Add a corresponding example in `src/xbt/_plugins/` and add focused unit tests under `tests/unit`.
+  - Add a corresponding example in `src/xbt/builtin_plugins/` and add focused unit tests under `tests/unit`.
 
 - **Quick examples to copy-paste**:
-  - Register a CLI command: see `xbt_register_commands` example in [src/xbt/_plugins/example_plugin.py](src/xbt/_plugins/example_plugin.py).
+  - Register a CLI command: see `xbt_register_commands` in [src/xbt/builtin_plugins/plugin_command.py](src/xbt/builtin_plugins/plugin_command.py).
   - Pre-invoke arg injection: return a modified list from `xbt_pre_invoke` (see [src/xbt/hookspecs.py](src/xbt/hookspecs.py) docstring example).
 
 If anything here is unclear or you'd like more detail about a specific file or workflow (for example, the entry-point loading behavior or test fixtures), tell me which area to expand and I'll iterate.

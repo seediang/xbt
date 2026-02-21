@@ -73,11 +73,11 @@ Create an `xbt.yml` file in your project root:
 ```yaml
 # Blacklist mode: disable specific plugins
 disabled_plugins:
-  - builtin_example_plugin
+  - builtin_plugin_command
 
 # OR use whitelist mode: only enable specific plugins
 enabled_plugins:
-  - builtin_plugin_manager_plugin
+  - builtin_plugin_command
   - my_external_plugin
 ```
 
@@ -100,7 +100,7 @@ Example `xbt.yml`:
 
 ```yaml
 plugin_order:
-  - builtin_example_plugin
+  - builtin_plugin_command
   - my_external_plugin
 
 # You can still use the blacklist/whitelist controls
@@ -194,7 +194,6 @@ xbt-core/
 │   │   └── config.py            # PluginConfig base class
 │   ├── builtin_plugins/         # Built-in plugins
 │   │   ├── __init__.py
-│   │   ├── example_plugin.py    # Reference implementation
 │   │   └── plugin_command.py    # CLI commands plugin
 ├── tests/
 │   ├── unit/

@@ -16,8 +16,7 @@
 # Uncomment and customize to use whitelist mode:
 #
 # enabled_plugins:
-#   - builtin_example_plugin
-#   - builtin_plugin_manager_plugin
+#   - builtin_plugin_command
 #   - my_external_plugin
 
 # List of plugins to disable (blacklist mode)
