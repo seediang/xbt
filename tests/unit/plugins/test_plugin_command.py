@@ -145,9 +145,7 @@ class TestListPluginsCommand:
 
         mocker.patch("pathlib.Path.cwd", return_value=tmp_path)
         mocker.patch.object(Path, "glob", return_value=[])  # No built-ins
-        mocker.patch(
-            "importlib.metadata.entry_points", return_value=[mock_ep_a, mock_ep_b]
-        )
+        mocker.patch("importlib.metadata.entry_points", return_value=[mock_ep_a, mock_ep_b])
 
         # Register commands and execute list
         plugin_command.xbt_register_commands(mock_cli)
@@ -157,40 +155,15 @@ class TestListPluginsCommand:
             # plugin_b should appear before plugin_a
             assert captured.out.index("plugin_b") < captured.out.index("plugin_a")
 
-    def test_list_plugins_builtin_icon(self, reset_plugin_manager, mocker, capsys):
-        """Test that builtin plugins show correct icon."""
-        # Rather than trying to mock the complex plugin loading,
-        # we'll test that the plugin_command itself can be imported and registered
-        # The icon test is checked via the list_plugins command output
-
-        # Just verify the module works and has correct hooks
+    def test_plugin_command_only_implements_register_commands(self):
+        """Test that plugin_command only implements the required hook."""
+        # plugin_command only needs xbt_register_commands
         assert hasattr(plugin_command, "xbt_register_commands")
-        assert hasattr(plugin_command, "xbt_register_callbacks")
-        assert hasattr(plugin_command, "xbt_pre_invoke")
-        assert hasattr(plugin_command, "xbt_post_invoke")
 
-
-class TestOtherHooks:
-    """Test other hook implementations in plugin_command."""
-
-    def test_register_callbacks_returns_none(self):
-        """Test that xbt_register_callbacks returns None."""
-        result = plugin_command.xbt_register_callbacks()
-        assert result is None
-
-    def test_pre_invoke_returns_none(self):
-        """Test that xbt_pre_invoke returns None (no modification)."""
-        result = plugin_command.xbt_pre_invoke(["test", "args"])
-        assert result is None
-
-    def test_post_invoke_does_nothing(self):
-        """Test that xbt_post_invoke completes without error."""
-        from unittest.mock import Mock
-
-        mock_result = Mock()
-
-        # Should not raise exception
-        plugin_command.xbt_post_invoke(["test"], mock_result)
+        # Optional hooks are not implemented
+        assert not hasattr(plugin_command, "xbt_register_callbacks")
+        assert not hasattr(plugin_command, "xbt_pre_invoke")
+        assert not hasattr(plugin_command, "xbt_post_invoke")
 
 
 class TestPluginCommandIntegration:
