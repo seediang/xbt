@@ -36,6 +36,7 @@ jobs:
         run: uvx ty check
 
   unit-tests:
+    needs: lint
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -58,6 +59,7 @@ jobs:
         run: uv run python -m pytest --cov=src/xbt --cov-report=term tests/unit/
 
   integration-tests:
+    needs: unit-tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

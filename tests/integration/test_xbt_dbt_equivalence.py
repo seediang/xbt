@@ -1,11 +1,8 @@
 """Integration tests to verify xbt output matches dbt output."""
 
-import os
 import re
 import subprocess
 from pathlib import Path
-
-import pytest
 
 
 class TestXbtDbtEquivalence:
@@ -66,7 +63,6 @@ class TestXbtDbtEquivalence:
         assert xbt_returncode == 0, f"xbt parse failed:\n{xbt_stderr}"
 
         # Compare normalized outputs
-        dbt_normalized = self.normalize_output(dbt_stdout)
         xbt_normalized = self.normalize_output(xbt_stdout)
 
         # Check that both outputs contain key indicators (performance info written)
@@ -159,7 +155,6 @@ class TestXbtDbtEquivalence:
         assert xbt_returncode == 0, f"xbt run failed:\n{xbt_stderr}"
 
         # Compare normalized outputs
-        dbt_normalized = self.normalize_output(dbt_stdout)
         xbt_normalized = self.normalize_output(xbt_stdout)
 
         # Check for key success indicators
@@ -233,7 +228,6 @@ class TestXbtDbtEquivalence:
         assert xbt_returncode == 0, f"xbt build failed:\n{xbt_stderr}"
 
         # Compare normalized outputs
-        dbt_normalized = self.normalize_output(dbt_stdout)
         xbt_normalized = self.normalize_output(xbt_stdout)
 
         # Check for key success indicators
@@ -254,7 +248,6 @@ class TestXbtDbtEquivalence:
         assert xbt_returncode == 0, f"xbt --help failed:\n{xbt_stderr}"
 
         # Check that help text refers to 'xbt' not 'dbt'
-        help_text = xbt_stdout.lower()
         # The usage line should say "xbt" not "dbt"
         usage_lines = [line for line in xbt_stdout.split("\n") if "usage:" in line.lower()]
         if usage_lines:
