@@ -5,7 +5,7 @@ Provides commands to manage and list loaded plugins.
 """
 
 import logging
-from typing import Any, Callable, List, Optional
+from typing import Any
 
 import pluggy
 
@@ -53,3 +53,21 @@ def xbt_register_commands(cli_group: Any) -> None:
             print(f"     Source:  {plugin['source']}")
             print(f"     Module:  {plugin['module']}")
             print()
+
+
+@hookimpl
+def xbt_register_callbacks():
+    """No callbacks needed for plugin command."""
+    return None
+
+
+@hookimpl
+def xbt_pre_invoke(args):
+    """No pre-invoke logic needed for plugin command."""
+    return None
+
+
+@hookimpl
+def xbt_post_invoke(args, result):
+    """No post-invoke logic needed for plugin command."""
+    pass
